@@ -39,3 +39,5 @@ description: 用于在 io.zershyan 系列 Minecraft 模组仓库中编码、改�
 ## 工程模板
 
 `templates/neoforge1.21.1/` 是可编译运行的完整 NeoForge 1.21.1 工程（modid `examplemod`）。新建同世代项目时复制它再改 modid 与包名，详见 [references/build.md](references/build.md)。
+
+**模板与 skill 必须同步**：skill 的规范变更后，模板要跟着改，并重新跑 `compileJava` 与 `runData` 验证。两者不允许不一致。

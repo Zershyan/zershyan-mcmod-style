@@ -1,4 +1,5 @@
 {
+  "attribute.examplemod.example_ability.desc": "Example Ability",
   "block.examplemod.example_block": "Example Block",
   "block.examplemod.example_custom_block": "Example Custom Block",
   "command.examplemod.value_set": "Value set to %s",

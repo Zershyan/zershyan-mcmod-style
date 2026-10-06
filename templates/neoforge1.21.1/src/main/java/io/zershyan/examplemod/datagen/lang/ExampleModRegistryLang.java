@@ -1,13 +1,11 @@
 package io.zershyan.examplemod.datagen.lang;
 
-import io.zershyan.examplemod.registry.ExampleModBlocks;
-import io.zershyan.examplemod.registry.ExampleModCustomRegistries;
-import io.zershyan.examplemod.registry.ExampleModItems;
-import io.zershyan.examplemod.registry.ExampleModSounds;
+import io.zershyan.examplemod.registry.*;
 import io.zershyan.examplemod.registry.custom_registry.builder.IExampleStyle;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredItem;
 
@@ -31,6 +29,11 @@ public class ExampleModRegistryLang extends ExampleModLang {
                 .ifPresent(key -> addFinalEntry(key, enUs, zhCn));
     }
 
+    private void entryAttribute(Holder<Attribute> attribute, String enUs, String zhCn) {
+        attribute.unwrapKey().map(ResourceKey::location).map(ExampleModLang::getAttributeDesc)
+                .ifPresent(key -> addFinalEntry(key, enUs, zhCn));
+    }
+
     @Override
     protected void init() {
         entryItem(ExampleModItems.EXAMPLE_ITEM, "Example Item", "示例物品");
@@ -38,6 +41,7 @@ public class ExampleModRegistryLang extends ExampleModLang {
         entryBlock(ExampleModBlocks.EXAMPLE_BLOCK, "Example Block", "示例方块");
         entryBlock(ExampleModBlocks.EXAMPLE_CUSTOM_BLOCK, "Example Custom Block", "示例自定义方块");
         entrySound(ExampleModSounds.EXAMPLE_SOUND, "Example Sound", "示例音效");
+        entryAttribute(ExampleModAttributes.EXAMPLE_ABILITY, "Example Ability", "示例能力");
         entryCustomRegistry(ExampleModCustomRegistries.SIMPLE, "Simple Style", "简单风格");
     }
 }

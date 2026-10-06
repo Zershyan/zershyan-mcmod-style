@@ -1,4 +1,5 @@
 {
+  "attribute.examplemod.example_ability.desc": "示例能力",
   "block.examplemod.example_block": "示例方块",
   "block.examplemod.example_custom_block": "示例自定义方块",
   "command.examplemod.value_set": "数值已设为 %s",

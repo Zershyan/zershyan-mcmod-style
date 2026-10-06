@@ -29,6 +29,17 @@ templates/neoforge1.21.1/
 2. 改 `gradle.properties` 的 `mod_id` / `mod_name` / `mod_license` / `mod_description`。
 3. 按需删除用不到的注册类（模板覆盖了全部常见类型，空项目不必全留）。
 
+### 模板与 skill 必须同步（维护约定）
+
+**skill 的规范一旦变更，模板必须跟着改**，两者不允许出现不一致：
+
+- 改了命名规范（如注册类前缀）→ 模板里所有类名与引用都要改。
+- 改了包结构（如新增 `compat/`、`renderer/`）→ 模板要建出对应目录与示例。
+- 改了写法（如日志实现、`doRegister` 约定）→ 模板代码要同步。
+- 改了构建约定（如 moddev 版本策略）→ 模板的构建脚本要同步。
+
+改完模板后**必须重新验证**：`./gradlew compileJava` 与 `./gradlew runData` 都要通过，确认模板仍可编译、datagen 仍能产出资源。
+
 ## 构建脚本骨架
 
 ```groovy

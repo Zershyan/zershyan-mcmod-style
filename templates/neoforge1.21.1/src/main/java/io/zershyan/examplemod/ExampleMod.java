@@ -24,6 +24,7 @@ public class ExampleMod {
         ExampleModBlocks.doRegister(modEventBus);
         ExampleModBlockEntityTypes.doRegister(modEventBus);
         ExampleModEntities.doRegister(modEventBus);
+        ExampleModAttributes.doRegister(modEventBus);
         ExampleModCreativeTab.doRegister(modEventBus);
         ExampleModDataComponents.doRegister(modEventBus);
         ExampleModAttachments.doRegister(modEventBus);
@@ -39,6 +40,7 @@ public class ExampleMod {
         if (dist.isClient()) {
             ExampleModOverlays.doRegister(modEventBus);
             ExampleModKeyMappings.doRegister(modEventBus);
+            ExampleModEntityLayers.doRegister(modEventBus);
         }
     }
 
