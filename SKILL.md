@@ -22,7 +22,8 @@ description: 用于在 io.zershyan 系列 Minecraft 模组仓库中编码、改�
 - **能由 datagen 生成的资源必须走 datagen**，不手写资源文件。
 - **版本号统一采用 `modid-版本号-mc版本号+build.构建数`**，`mod_version` 只写版本号，MC 版本由构建脚本拼接；包内版本恒带构建数、发布 jar 名不带；`buildAlpha` 用 `+1` 后的编号构建并把该编号同步回 `gradle.properties`，`build` 沿用上次编号且不回写（见 [references/versioning.md](references/versioning.md)）。
 - **可选依赖的调用必须走 `compat/` 包**，所有第三方 API 调用包在 `testLoadedAndRun` / `testLoadedAndCall` 内，依赖缺失时模组仍要能启动（见 [references/compat.md](references/compat.md)）。
-- **Forge 1.20.1 的新工程使用 forgeattachment 必需依赖**，固定 sigh Maven；ItemStack 自定义数据用 NBT，不建 `<ModId>DataComponents`（见 [references/forgeattachment.md](references/forgeattachment.md)）。
+- **Forge 1.20.1 仅在实际需要附件功能时引入 forgeattachment**；不使用附件就不添加该依赖。需要时固定 sigh Maven，并声明为运行时必需依赖；ItemStack 自定义数据仍用 NBT，不建 `<ModId>DataComponents`。
+- **引入 forgeattachment 必须主动告知用户**：说明用途、运行时安装要求，并提供 GitHub、MC百科（mcmod）、CurseForge 项目链接。目前后两者暂未发布，先提供 [GitHub 仓库](https://github.com/Zershyan/forgeattachment)，明确标注未发布，不编造链接；发布后补齐真实地址。详见 [references/forgeattachment.md](references/forgeattachment.md)。
 - **不要擅自启用混淆**，也不要擅自引入本 skill 未列出的依赖或工具。
 
 ## 决策前必须询问用户的事项
@@ -43,6 +44,6 @@ description: 用于在 io.zershyan 系列 Minecraft 模组仓库中编码、改�
 - `templates/neoforge1.21.1/`：NeoForge 1.21.1 完整工程，已实测 `compileJava` 与 `runData`。
 - `templates/forge1.20.1/`：Forge 47.3.4 / Java 17 工程模板，使用 LegacyForge、SimpleChannel、NBT 与 forgeattachment；已联网刷新依赖并实测 `compileJava`、`runData`、`jar` 与 `reobfJar`，成品的 manifest、refmap 及 16 项 datagen 资源均已校验。
 
-两套模板的 modid 均为占位用的 `examplemod`。新建同世代项目时复制对应模板，再改 modid 与包名，详见 [references/build.md](references/build.md)。
+两套模板的 modid 均为占位用的 `examplemod`。新建同世代项目时复制对应模板，再改 modid 与包名，详见 [references/build.md](references/build.md)。Forge 模板实际包含附件演示，所以保留其依赖；复制到不使用附件的模组时，必须一并裁剪附件示例与依赖配置，不能原样照搬。
 
 **模板与 skill 必须同步**：skill 的规范变更后，模板要跟着改，并重新跑 `compileJava` 与 `runData` 验证。两者不允许不一致。

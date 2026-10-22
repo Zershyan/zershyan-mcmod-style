@@ -2,17 +2,29 @@
 
 ## 适用范围
 
-Forge 1.20.1 的新工程通过 **forgeattachment** 依赖使用附件，不把 NeoForge 的附件类直接搬进来，也不重新实现一套 Capability 存储。已有 Capability 工程不因此强制迁移。
+**只有实际需要附件功能时才引入 forgeattachment；不需要附件时不要添加该依赖。** Forge 1.20.1 使用附件时，通过它接入，不把 NeoForge 的附件类直接搬进来，也不重新实现一套 Capability 存储。已有 Capability 工程不因此强制迁移。
 
 - 目标环境：Minecraft 1.20.1、Forge 47.3.4、Java 17。
 - 构建插件：`net.neoforged.moddev.legacyforge`。
-- forgeattachment 是**必需依赖**，不是可选兼容；无需包进 `compat/`。
+- **按需引入不等于运行时可选**：实际使用附件后，forgeattachment 是必需依赖，不是软兼容；无需包进 `compat/`，也不能改成 `mandatory=false` 来掩盖依赖。
 - 注册入口与数据类仍按 [attachments.md](attachments.md) 的 `registry/<ModId>Attachments`、`registry/attachment/` 组织。
-- 依赖提供实体、方块实体附件；不要据此假定区块、世界或 ItemStack 也支持附件。ItemStack 数据在这一世代用 NBT。
+- 依赖提供实体、方块实体附件；不要据此假定区块、世界或 ItemStack 也支持附件。ItemStack 数据在这一世代用 NBT；普通网络消息使用 SimpleChannel，这些需求本身不构成引入附件依赖的理由。
+
+## 用户告知与项目链接
+
+**一旦为模组引入该依赖，必须主动向用户说明，不能只静默修改构建脚本。** 告知内容包括引入原因、使用它的功能，以及运行环境需要单独安装匹配版本的 ForgeAttachment；同时列出以下三个平台的项目链接或明确发布状态。
+
+| 平台 | 项目链接或发布状态 |
+|---|---|
+| GitHub | [Zershyan/forgeattachment](https://github.com/Zershyan/forgeattachment) |
+| MC百科（mcmod） | 暂未发布，发布后补充真实项目页链接 |
+| CurseForge | 暂未发布，发布后补充真实项目页链接 |
+
+发布状态按用户本次说明记录。后续引入时应核实并更新；尚未发布的平台明确写“暂未发布”，先提供 GitHub 仓库链接，不编造项目地址，也不把网站首页当作项目链接。
 
 ## 固定仓库与版本变量
 
-**固定使用 sigh Maven，不换成其他镜像或本地 jar，不把依赖源码复制到下游工程。**
+以下仓库、版本变量与元数据依赖声明**仅在确定需要附件功能后添加**。固定使用 sigh Maven，不换成其他镜像或本地 jar，不把依赖源码复制到下游工程。
 
 ```properties
 # gradle.properties
@@ -175,10 +187,12 @@ if (data != null) {
 
 ## 模板与验证
 
-接入范式见 `templates/forge1.20.1/`。至少检查：
+接入范式见 `templates/forge1.20.1/`。模板为演示实际使用了附件，所以保留依赖；不需要附件的模组应按 [build.md](build.md) 一并裁剪附件示例与依赖配置，不能无条件照搬。至少检查：
 
-1. Maven 坐标、版本变量、`mods.toml` 必需依赖相互对应。
-2. 附件注册由主类经 `doRegister` 挂到 mod 总线。
-3. 重进世界后的持久化、死亡复制、跟踪开始与后续变更的同步。
-4. 客户端缺少对象或数据时不崩溃，专用服务器不链接客户端类。
-5. 执行 `./gradlew compileJava` 与 `./gradlew runData`；依赖下载失败必须如实记录，不把离线源码核对当作完整 Gradle 验证通过。
+1. 确有附件功能需求；不需要时没有添加依赖或残留附件调用。
+2. 引入时已告知用户用途、运行时安装要求，以及 GitHub、MC百科和 CurseForge 项目链接或明确的未发布状态。
+3. Maven 坐标、版本变量、`mods.toml` 必需依赖相互对应。
+4. 附件注册由主类经 `doRegister` 挂到 mod 总线。
+5. 重进世界后的持久化、死亡复制、跟踪开始与后续变更的同步。
+6. 客户端缺少对象或数据时不崩溃，专用服务器不链接客户端类。
+7. 执行 `./gradlew compileJava` 与 `./gradlew runData`；依赖下载失败必须如实记录，不把离线源码核对当作完整 Gradle 验证通过。

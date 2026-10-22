@@ -19,7 +19,7 @@
 | 网络 | payload、`CustomPacketPayload`、`StreamCodec`、packet、`<ModId>Packets` | [network.md](network.md) | [registry.md](registry.md) |
 | 配置 | config、`ModConfigSpec`、`<ModId>Configs`、ClientConfig、ServerConfig | [config.md](config.md) | [registry.md](registry.md) |
 | 附件与能力 | Attachment、Capability、`<ModId>Attachments`、`<ModId>Capabilities` | [attachments.md](attachments.md) | [registry.md](registry.md) |
-| Forge 附件依赖 | forgeattachment、ForgeAttachmentApi、ForgeAttachmentRegistries、Forge 1.20.1 附件、sigh Maven | [forgeattachment.md](forgeattachment.md) | [attachments.md](attachments.md)、[network.md](network.md) |
+| Forge 附件依赖 | forgeattachment、ForgeAttachmentApi、ForgeAttachmentRegistries、Forge 1.20.1 附件、sigh Maven、按需引入、用户告知、MC百科、CurseForge、GitHub | [forgeattachment.md](forgeattachment.md) | [attachments.md](attachments.md)、[network.md](network.md) |
 | 第三方模组兼容 | compat、可选依赖、`ICompatUtils`、`CompatFactory`、软兼容、`ModList.isLoaded`、类链接 | [compat.md](compat.md) | [registry.md](registry.md)、[mixin.md](mixin.md)（兼容 mixin 时） |
 | 日志与工具 | 日志、`LOGGER`、`id()`、`ResourceLocation`、util 工具 | [logging-and-util.md](logging-and-util.md) | [naming-and-layout.md](naming-and-layout.md) |
 | 构建与发布 | build.gradle、moddev、运行配置、Proguard、混淆、发布、新建项目、工程模板 | [build.md](build.md) | [naming-and-layout.md](naming-and-layout.md) |
@@ -32,7 +32,7 @@
 
 | 任务 | 读取顺序 |
 |---|---|
-| 新建一个 mod | `build.md`（按版本选 NeoForge 或 Forge 模板）→ `naming-and-layout.md` → `architecture.md` → `registry.md`；Forge 1.20.1 再读 `forgeattachment.md` |
+| 新建一个 mod | `build.md`（按版本选 NeoForge 或 Forge 模板）→ `naming-and-layout.md` → `architecture.md` → `registry.md`；Forge 1.20.1 需要附件时再读 `forgeattachment.md`，无需附件就不加该依赖 |
 | 新增注册项（物品/方块/声音等） | `registry.md` → `datagen.md`（需要资源时） |
 | 新增网络包 | `network.md` → `registry.md` |
 | 新增命令 | `commands.md` → `registry.md` |

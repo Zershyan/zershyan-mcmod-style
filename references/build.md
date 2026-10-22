@@ -36,9 +36,11 @@ templates/neoforge1.21.1/
 - ItemStack 自定义数据使用 NBT，不建 `ModDataComponents`。
 - 普通消息使用 `SimpleChannel`；三种配置使用 `ForgeConfigSpec`，不注册配置界面。
 - 自定义注册表保留 Forge 的 `NewRegistryEvent` / `RegistryBuilder` 写法。
-- 附件使用 forgeattachment 必需依赖，固定 sigh Maven 和明确版本变量，见 [forgeattachment.md](forgeattachment.md)。
+- 只有实际需要附件功能才引入 forgeattachment；不需要就不加。引入后为必需依赖，固定 sigh Maven 和明确版本变量，并向用户说明用途、安装要求及 GitHub / MC百科 / CurseForge 项目链接；未发布的平台明确标注。详见 [forgeattachment.md](forgeattachment.md)。
 - 元数据位于 `src/main/resources/META-INF/mods.toml`，由 `processResources` 展开；依赖使用 `mandatory=true`，不是 NeoForge 的 `type="required"`。展开值 `mod_version` 必须取 Gradle 的 `version`。
 - `mixins.json` 使用 `JAVA_17` 并声明 `<modid>.refmap.json`，不省略 refmap。
+
+模板实际包含附件演示，因此保留 forgeattachment 依赖，**不代表每个新模组都需要它**。复制到不使用附件的项目时，先移除或改写附件注册、数据类、事件处理和网络包中的附件引用，再移除 `modImplementation`、`forgeattachment_version` 与 `mods.toml` 中的对应依赖；仅为它服务的 Maven 仓库配置也一并移除，共享仓库按其他依赖需求保留。不要只删依赖、留下无法编译的附件调用；裁剪后重新运行 `compileJava` 与 `runData`。
 
 LegacyForge 自带 Mixin 集成，不另加 MixinGradle；成品 jar 的 manifest 仍需显式声明 Mixin 配置：
 
