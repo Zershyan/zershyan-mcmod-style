@@ -56,11 +56,18 @@ public final class <ModId>Configs {
 
 ## 配置界面
 
-客户端配置项需同时注册配置界面工厂，使配置界面可用：
+**NeoForge 1.21.1** 的客户端配置项需同时注册配置界面工厂，使配置界面可用：
 
 ```java
 modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
 ```
+
+## Forge 1.20.1
+
+- 保留 `ClientConfig`、`CommonConfig`、`ServerConfig` 三类，使用 `ForgeConfigSpec`，不增加 Startup 配置。
+- `<ModId>Configs.doRegister()` 内通过 `ModLoadingContext.get().registerConfig(...)` 注册；客户端配置先检查物理客户端，可用 `FMLLoader.getDist().isClient()`。
+- **不注册配置界面**，不移植 NeoForge 的 `IConfigScreenFactory` 或 `ConfigurationScreen`，也不额外添加界面依赖。
+- `define(...)` 的键与 `ConfigLangEntry` 的名称保持一致，通过 `.translation(langEntry.key())` 关联。
 
 ## 配置项的语言
 

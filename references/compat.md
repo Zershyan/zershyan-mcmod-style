@@ -17,8 +17,8 @@ compat/
     └── ...
 ```
 
-- 子包**按被兼容 mod 的 modid 命名**（`bettercombat/`、`playeranimator/`、`patchouli/`）。
-- 每个子包内可以有自己的完整结构（`api/`、`event/`、`utils/`、`registry/`），因为兼容代码往往自成体系。
+- 子包**按被兼容 mod 的 modid 命名**（如 `<depmodid>/`）。
+- 每个子包内可以有自己的完整结构（`api/`、`event/`、`util/`、`registry/`），因为兼容代码往往自成体系；`util/` 同样用单数。
 - 该依赖**独有**的注册项、事件、mixin 接口都收在这个子包内，不要散到主包的 `registry/`。
 
 ## ICompatUtils
@@ -105,7 +105,7 @@ public interface ICompatUtils {
 
 ## 加载器差异
 
-`ICompatUtils` 是与加载器相关的，两个世代各有一处不同。**接口方法名与整体格式完全一致**，只改这两处：
+`ICompatUtils` 与加载器相关。**接口方法名与整体格式完全一致**，两个世代按下表调整：
 
 | 项 | NeoForge（1.21.x） | Forge（1.20.1） |
 |---|---|---|
@@ -163,7 +163,7 @@ package io.zershyan.<modid>.compat;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.network.SimpleChannel;
+import net.minecraftforge.network.simple.SimpleChannel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

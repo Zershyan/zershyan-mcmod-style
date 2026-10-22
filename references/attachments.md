@@ -18,9 +18,11 @@ registry/
 - 数据类属于「注册时必需的数据」，因此放在 `registry` 下（判定见 [registry.md](registry.md)）。
 - 嵌套的辅助数据放 `attachment/sub/`。
 
-## Forge：Capability
+## Forge 1.20.1：forgeattachment 为主
 
-Forge 1.20.1 线用 Capability：注册入口 `registry/<ModId>Capabilities.java`，能力实现放 `capability/` 包。
+新工程通过必需依赖 **forgeattachment** 使用附件，注册入口同样是 `registry/<ModId>Attachments.java`，数据类同样放 `registry/attachment/`。固定 sigh Maven、版本变量、注册、持久化与同步写法见 [forgeattachment.md](forgeattachment.md)。
+
+已有 Capability 工程保留原有结构：注册入口 `registry/<ModId>Capabilities.java`，能力实现放 `capability/` 包；不要未经确认强制迁移。
 
 ```
 registry/
@@ -33,7 +35,7 @@ capability/
 ## 选择原则
 
 - NeoForge 世代优先用 Attachment，不要为了「统一」而在 NeoForge 上用 Capability 风格。
-- Forge 世代用 Capability。
+- Forge 1.20.1 新工程用 forgeattachment；已有 Capability 代码遵循原仓库，不擅自迁移。
 - 具体采用哪种取决于目标 MC 世代，不确定时先问用户。
 
 ## 同步

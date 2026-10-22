@@ -77,7 +77,7 @@ public static ResourceLocation id(String path) {
 }
 ```
 
-`LOGGER` 与 `id()` 的完整规范见 [logging-and-util.md](logging-and-util.md)。
+以上 `id()` 为 NeoForge 1.21.1 写法；Forge 1.20.1 返回 `new ResourceLocation(MODID, path)`，仍统一放在主类，不另建重复门面。`LOGGER` 与 `id()` 的完整规范见 [logging-and-util.md](logging-and-util.md)。
 
 ## 完成前检查
 

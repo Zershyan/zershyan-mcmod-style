@@ -56,6 +56,16 @@ public class DataGeneratorHandler {
 - 无参构造的 Provider 用 `event.createProvider(X::new)`；需要 `PackOutput` / `ExistingFileHelper` / `HolderLookup.Provider` 的用 `event.addProvider(new X(...))`。
 - 只注册项目实际需要的 Provider，不要为了齐全而引入空 Provider。
 
+## Forge 1.20.1 差异
+
+上面的事件代码针对 NeoForge；Forge 1.20.1 使用 `@Mod.EventBusSubscriber(modid = <ModId>.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)` 和 `net.minecraftforge.data.event.GatherDataEvent`，通过 `event.getGenerator().addProvider(event.includeClient() / event.includeServer(), provider)` 注册，不照搬 `event.createProvider(...)`。
+
+- 仍保留 `lang/` 四类、`provider/`、`util/` 的结构，注册项参数使用 `RegistryObject`。
+- Java 17 不使用 Java 21 的模式匹配 `switch`，类型分发使用 `instanceof`。
+- `LootTableProvider` / `BlockLootSubProvider` 使用 1.20.1 构造器，不传入 1.21.1 的 lookup 参数。
+- 示例声音缺少合法 ogg 时，保留 Provider 写法但不启用其注册，不生成假音频绕过校验。
+- 具体范式见 `templates/forge1.20.1/`，生成产物仍写到 `src/generated/resources`。
+
 ## 语言数据源（固定范式）
 
 ### 抽象基类

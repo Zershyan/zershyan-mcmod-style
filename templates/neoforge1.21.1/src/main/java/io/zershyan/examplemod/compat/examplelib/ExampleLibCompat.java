@@ -19,11 +19,11 @@ public class ExampleLibCompat implements ICompatUtils {
 
     @Override
     public void addCommonListener(IEventBus forgeBus, IEventBus modBus) {
-        forgeBus.register(ExampleLibCommonSetupEvent.class);
+        modBus.register(ExampleLibCommonSetupEvent.class);
     }
 
     @Override
     public void addClientListener(IEventBus forgeBus, IEventBus modBus) {
-        forgeBus.register(ExampleLibClientSetupEvent.class);
+        modBus.register(ExampleLibClientSetupEvent.class);
     }
 }

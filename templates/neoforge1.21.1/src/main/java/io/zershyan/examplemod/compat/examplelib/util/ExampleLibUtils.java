@@ -1,4 +1,4 @@
-package io.zershyan.examplemod.compat.examplelib.utils;
+package io.zershyan.examplemod.compat.examplelib.util;
 
 import io.zershyan.examplemod.ExampleMod;
 import io.zershyan.examplemod.compat.ExampleModCompatFactory;

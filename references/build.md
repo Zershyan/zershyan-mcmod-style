@@ -29,6 +29,41 @@ templates/neoforge1.21.1/
 2. 改 `gradle.properties` 的 `mod_id` / `mod_name` / `mod_license` / `mod_description`。
 3. 按需删除用不到的注册类（模板覆盖了全部常见类型，空项目不必全留）。
 
+### Forge 1.20.1 模板
+
+`templates/forge1.20.1/` 是已实测编译与 datagen 的 Forge 47.3.4 / Java 17 工程模板，构建插件为 `net.neoforged.moddev.legacyforge`（当前模板 2.0.148，新建项目时仍需查询最新版本）。它与 NeoForge 模板共用包结构、`doRegister` 和版本号规约，但以下内容不能照搬：
+
+- ItemStack 自定义数据使用 NBT，不建 `ModDataComponents`。
+- 普通消息使用 `SimpleChannel`；三种配置使用 `ForgeConfigSpec`，不注册配置界面。
+- 自定义注册表保留 Forge 的 `NewRegistryEvent` / `RegistryBuilder` 写法。
+- 附件使用 forgeattachment 必需依赖，固定 sigh Maven 和明确版本变量，见 [forgeattachment.md](forgeattachment.md)。
+- 元数据位于 `src/main/resources/META-INF/mods.toml`，由 `processResources` 展开；依赖使用 `mandatory=true`，不是 NeoForge 的 `type="required"`。展开值 `mod_version` 必须取 Gradle 的 `version`。
+- `mixins.json` 使用 `JAVA_17` 并声明 `<modid>.refmap.json`，不省略 refmap。
+
+LegacyForge 自带 Mixin 集成，不另加 MixinGradle；成品 jar 的 manifest 仍需显式声明 Mixin 配置：
+
+```groovy
+legacyForge {
+    version = "${minecraft_version}-${forge_version}"
+    mixin {
+        add sourceSets.main, "${mod_id}.refmap.json"
+        config "${mod_id}.mixins.json"
+    }
+}
+
+dependencies {
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+tasks.named('jar', Jar).configure {
+    manifest.attributes('MixinConfigs': "${mod_id}.mixins.json")
+}
+```
+
+当前验证结果：已使用 `./gradlew --refresh-dependencies compileJava --rerun runData jar` 联网复测通过，实际重新执行 Java 编译、datagen、jar 与 `reobfJar`。Forge MCP、AutoRenamingTool 与 sigh Maven 的 forgeattachment POM / jar 下载均返回 HTTP 200。成品 jar 已检查 CRC、`MixinConfigs` manifest、非空 SRG refmap、元数据版本和 Java 17 字节码；16 项 datagen 资源全部入包，双语各 18 条。此前的环境依赖下载阻塞已解除；独立的附件 Codec / StreamCodec、双向消息编解码边界值测试也已通过。
+
+开发态 `runData` 日志仍会提示 refmap 无法读取，但任务正常完成；成品 jar 内的 refmap 已单独确认存在且包含有效映射，不应把开发态警告当成成品缺失 refmap。
+
 ### 模板与 skill 必须同步（维护约定）
 
 **skill 的规范一旦变更，模板必须跟着改**，两者不允许出现不一致：
@@ -40,6 +75,25 @@ templates/neoforge1.21.1/
 
 改完模板后**必须重新验证**：`./gradlew compileJava` 与 `./gradlew runData` 都要通过，确认模板仍可编译、datagen 仍能产出资源。
 
+## 版本号
+
+**整个模组家族统一采用 `modid-版本号-mc版本号+build.构建数`**，完整规约与打包收尾任务见 [versioning.md](versioning.md)。
+
+```properties
+# gradle.properties
+mod_version=0.0.1          # 只写版本号，不含 MC 版本
+mod_build_number=0         # 不手工维护，由 buildAlpha 构建后同步为所用编号
+```
+
+```groovy
+// build.gradle
+def isAlphaBuild = gradle.startParameter.taskNames.any { it.endsWith('buildAlpha') }
+// buildAlpha 用 +1 后的编号构建，成功后把同一编号写回 gradle.properties
+def buildNumber = mod_build_number.toInteger() + (isAlphaBuild ? 1 : 0)
+def baseVersion = "${mod_version}-${minecraft_version}"
+version = "${baseVersion}+build.${buildNumber}"
+```
+
 ## 构建脚本骨架
 
 ```groovy
@@ -50,7 +104,7 @@ plugins {
     id 'idea'
 }
 
-version = mod_version
+// 版本号计算使用上节规约，包含 buildAlpha 的 +1 逻辑
 group = mod_group_id
 
 sourceSets.main.resources {
@@ -128,7 +182,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
             mod_id                 : mod_id,
             mod_name               : mod_name,
             mod_license            : mod_license,
-            mod_version            : mod_version,
+            mod_version            : version,
             mod_authors            : mod_authors,
             mod_description        : mod_description,
             mod_credits            : mod_credits,
@@ -222,6 +276,7 @@ afterEvaluate {
 
 // 打包收尾：混淆产物拷成最终包，原包挪进 origin。
 // 混淆产物只读不搬，proguard 任务的输出追踪才不会被自己人破坏。
+// baseVersion / isAlphaBuild 由版本号规约定义，见 versioning.md
 tasks.register('finalizeArtifacts') {
     group = 'build'
     def libsDir = layout.buildDirectory.dir('libs').get().asFile
@@ -229,7 +284,6 @@ tasks.register('finalizeArtifacts') {
     def originDir = new File(libsDir, 'origin')
     def modId = mod_id
     def modVersion = version
-    def baseVersion = mod_version
     doLast {
         def obfuscatedJar = new File(obfuscateDir, "${modId}-${modVersion}-obfuscated.jar")
         def backupJar = new File(originDir, "${modId}-${modVersion}-origin.jar")
@@ -257,9 +311,10 @@ tasks.named('proguardUtf8Fix') { finalizedBy 'finalizeArtifacts' }
 - `proguard-rules.pro` —— 混淆规则。
 - `obfuscate/dict.txt` —— 混淆字典。
 - `ZipEntryEncodingFixer` —— 测试源集内的 zip 条目编码修正工具。
-- `isAlphaBuild` —— 判断是否为 alpha 构建的变量，按项目实际情况提供。
 
 任务链：`jar → proguard → proguardUtf8Fix → finalizeArtifacts`。
+
+启用混淆时，本节给出的 `finalizeArtifacts` **替换** [versioning.md](versioning.md) 中不启用混淆的那一版（它多了一步：把混淆产物拷成最终包）。版本号拼接部分不变。
 
 **启用混淆后注册类名用 `Mod*` 前缀**（见 [naming-and-layout.md](naming-and-layout.md)）。
 

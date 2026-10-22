@@ -4,7 +4,7 @@
 
 **NeoForge 不需要 `refmap`**，NeoForge 内部会自动转换，不要写 `refmap` 字段。
 
-Forge 的 refmap 不属于本 skill 规范范围，不处理。
+**Forge 1.20.1 必须写 refmap**：配置文件包含 `"refmap": "<modid>.refmap.json"`，并使用 `JAVA_17`。LegacyForge 在 `legacyForge.mixin` 中调用 `add sourceSets.main, "${mod_id}.refmap.json"` 与 `config "${mod_id}.mixins.json"`，由 Mixin 注解处理器生成映射；成品 jar 的 manifest 还需显式添加 `MixinConfigs: <modid>.mixins.json`，不能只依赖开发运行配置。不要额外引入 MixinGradle。完整构建写法见 [build.md](build.md)。
 
 ## 必须使用 MixinPlugin
 
@@ -62,9 +62,11 @@ io.zershyan.<本modid>.mixin.moda.modb.MixinXXX
 
 - 统一放 `util/mixin/` 下，命名 `IMixin + 目标类名`。
 - **必须与 mixin 类的包结构保持一致**。
-- 为多 mod 兼容而写的接口，放 `util/mixin/` 下对应 mod 的子包：如 `util/mixin/playeranimator/IMixinXxx`。
+- 为多 mod 兼容而写的接口，放 `util/mixin/` 下对应 mod 的子包：如 `util/mixin/<depmodid>/IMixinXxx`。
 
 ## mixins.json
+
+以下为 NeoForge 1.21.1 格式；Forge 1.20.1 改为 `JAVA_17` 并添加 `refmap`，其余结构不变。
 
 ```json
 {
@@ -80,7 +82,7 @@ io.zershyan.<本modid>.mixin.moda.modb.MixinXXX
 }
 ```
 
-不要写 `refmap`。
+NeoForge 不要写 `refmap`；Forge 1.20.1 必须添加。
 
 ## 职责边界
 

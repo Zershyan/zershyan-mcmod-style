@@ -1,10 +1,16 @@
 package io.zershyan.examplemod.registry.packet;
 
 import io.zershyan.examplemod.ExampleMod;
+import io.zershyan.examplemod.client.ClientState;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
+import net.neoforged.neoforge.network.handling.IPayloadContext;
+import org.jetbrains.annotations.NotNull;
 
 /** 服务端 → 客户端：同步状态 */
 public record ExampleSyncPacket(int value) implements CustomPacketPayload {
@@ -17,7 +23,18 @@ public record ExampleSyncPacket(int value) implements CustomPacketPayload {
     );
 
     @Override
-    public CustomPacketPayload.Type<? extends CustomPacketPayload> type() {
+    public @NotNull Type<? extends CustomPacketPayload> type() {
         return TYPE;
+    }
+
+    /** 只在客户端侧执行；客户端只做展示 */
+    public void handle(IPayloadContext context) {
+        context.enqueueWork(() -> {
+            Minecraft minecraft = Minecraft.getInstance();
+            ClientLevel level = minecraft.level;
+            LocalPlayer player = minecraft.player;
+            if (level == null || player == null) return;
+            ClientState.setValue(value);
+        });
     }
 }

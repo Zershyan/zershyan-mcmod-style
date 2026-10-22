@@ -98,6 +98,14 @@ registry/
 - 注册项的语言键用 `toLanguageKey("<注册表名>", "desc")`，在语言基类提供对应辅助方法。
 - `RegistryBuilder` 的注册动作挂在 mod 总线的 `NewRegistryEvent` 上。
 
+## Forge 1.20.1 差异
+
+- `DeferredRegister`、`RegistryObject`、`ForgeRegistries` 来自 `net.minecraftforge.registries`；不使用 NeoForge 的 `DeferredItem`、`DeferredBlock`。
+- 自定义注册表仍归 `<ModId>Registries`。在 mod 总线的 `NewRegistryEvent` 中调用 `event.create(new RegistryBuilder<T>().setName(key.location()))`，保留返回的 `Supplier<IForgeRegistry<T>>`，事件后才访问其值；具体注册项通过 `DeferredRegister.create(key, MODID)` 注册。
+- ItemStack 自定义数据改用 NBT，不建 `<ModId>DataComponents`，也不创建 `registry/data_component/`。
+- overlay 使用 `RegisterGuiOverlaysEvent` / `IGuiOverlay`，仍由 `<ModId>Overlays.doRegister(modBus)` 挂监听，不挪进 handler。
+- 附件类型通过 forgeattachment 的注册表键注册，见 [forgeattachment.md](forgeattachment.md)。
+
 ## registry 内部子包约定
 
 - `registry/config/` —— 配置，见 [config.md](config.md)

@@ -9,12 +9,12 @@
 写 example 时，要求**开发环境与开关同时满足**：
 
 ```java
-if (!FMLEnvironment.isProduction() && StartupConfig.enableExample.get()) {
+if (!FMLEnvironment.production && StartupConfig.enableExample.get()) {
     ExampleHandler.doRegister(modEventBus, neoEventBus);
 }
 ```
 
-- 开发环境判断用 `!FMLEnvironment.isProduction()`。
+- 开发环境判断用 `!FMLEnvironment.production`（`FMLEnvironment` 只有 `public static final boolean production` 字段，**没有** `isProduction()` 方法）。
 - 开关来自 `gradle.properties`，如 `enableExample=true`。
 - 两者缺一不可：避免示例代码进入正式包，也便于单独关闭。
 
