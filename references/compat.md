@@ -1,296 +1,79 @@
-# 第三方模组兼容（compat）
+# 第三方模组兼容
 
-## 目的
+本页只处理**可选依赖**：未安装第三方模组时，不加载其 API、不注册对应内容，主模组仍须能启动。已声明的必需依赖不因此改成可选；ForgeAttachment 的按需接入另见 [专页](forgeattachment.md)。
 
-把对**可选依赖**（第三方 mod）的调用集中到 `compat/` 包，保证依赖缺失时模组仍能正常启动：不加载对应类、不注册对应内容、不崩溃。
+## 目录与职责
 
-## 结构
-
-```
+```text
 compat/
-├── ICompatUtils.java              兼容工具接口
-├── <ModId>CompatFactory.java      兼容工厂（统一入口）
-├── <被兼容modid>/                  每个可选依赖一个子包
-│   ├── XxxCompat.java             该依赖的兼容实现（implements ICompatUtils）
-│   └── ...                        该依赖自己的 api / event / utils / registry
-└── <另一个modid>/
-    └── ...
+├── ICompatUtils.java
+├── <ModId>CompatFactory.java
+└── <被兼容modid>/
+    ├── <Dep>Compat.java
+    ├── event/
+    ├── registry/
+    └── util/
 ```
 
-- 子包**按被兼容 mod 的 modid 命名**（如 `<depmodid>/`）。
-- 每个子包内可以有自己的完整结构（`api/`、`event/`、`util/`、`registry/`），因为兼容代码往往自成体系；`util/` 同样用单数。
-- 该依赖**独有**的注册项、事件、mixin 接口都收在这个子包内，不要散到主包的 `registry/`。
+- 每个依赖按其 modid 建子包；兼容实现 `implements ICompatUtils`。
+- 兼容子包可包含自己的 `api/`、`event/`、`registry/`、`util/`，工具包仍用单数。依赖独有的注册内容不散落到主模组的 `registry/`。
+- 第三方 API 引用集中在依赖专属实现中；通用入口避免在字段类型、方法签名、父类和静态初始化中提前链接可选类。
+- 兼容 Mixin 的加载条件与包结构见 [Mixin](mixin.md)。
 
-## ICompatUtils
+## 依赖检查入口
 
-```java
-public interface ICompatUtils {
-    default boolean testLoadedAndRun(Runnable runnable) {
-        if (isModLoaded()) runnable.run();
-        else return false;
-        return true;
-    }
+所有可选第三方 API 调用必须经 `testLoadedAndRun` / `testLoadedAndCall`：
 
-    default <T> T testLoadedAndCall(Callable<T> callable, T errorResult) {
-        try {
-            if (isModLoaded()) return callable.call();
-        } catch (Exception ignored) {
-        }
-        return errorResult;
-    }
+| 方法 | 用途 |
+|---|---|
+| `isModLoaded()` | 唯一必需实现的方法，用目标加载器的 `ModList.get().isLoaded(modid)` |
+| `testLoadedAndRun(Runnable)` | 依赖存在时执行，无返回值的能力入口 |
+| `testLoadedAndCall(Callable<T>, errorResult)` | 依赖存在时调用，否则返回默认值 |
+| 带 `elseCall` 的重载 | 依赖缺失时执行替代调用；异常时返回 `errorResult` |
+| `initial(gameBus, modBus)` | 经依赖检查后初始化监听 |
+| `initNetwork(network)` | 经依赖检查后注册兼容消息 |
 
-    default <T> T testLoadedAndCall(Callable<T> callable, Callable<T> elseCall, T errorResult) {
-        try {
-            if (isModLoaded()) return callable.call();
-            else return elseCall.call();
-        } catch (Exception e) {
-            return errorResult;
-        }
-    }
+`safelyRun` 只是异常包装，不做依赖检查，不能替代上述入口。依赖检查也不是任意类加载的保护罩：把第三方类型直接写进通用类的签名，仍可能在检查前触发链接。
 
-    default void addCommonListener(IEventBus forgeBus, IEventBus modBus) {
-    }
+完整接口直接取对应模板，不再在本文重复三套实现：
 
-    default void addClientListener(IEventBus forgeBus, IEventBus modBus) {
-    }
-
-    default void addListener(IEventBus forgeBus, IEventBus modBus) {
-        addCommonListener(forgeBus, modBus);
-        if (<isClient>) {
-            addClientListener(forgeBus, modBus);
-        }
-    }
-
-    default void init(IEventBus forgeBus, IEventBus modBus) {
-        addListener(forgeBus, modBus);
-    }
-
-    default void initial(IEventBus forgeBus, IEventBus modBus) {
-        try {
-            testLoadedAndRun(() -> init(forgeBus, modBus));
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
-        }
-    }
-
-    default void safelyRun(Runnable runnable) {
-        try {
-            runnable.run();
-        } catch (Exception ignored) {
-        }
-    }
-
-    default void initNetwork(PayloadRegistrar registrar) {
-        try {
-            testLoadedAndRun(() -> registerNetwork(registrar));
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
-        }
-    }
-
-    default void registerNetwork(PayloadRegistrar registrar) {
-    }
-
-    boolean isModLoaded();
-}
-```
-
-要点：
-
-- `isModLoaded()` 是唯一必须实现的方法，用 `ModList.get().isLoaded(modid)`。
-- `testLoadedAndRun` / `testLoadedAndCall` 是**唯一的依赖检查入口**：所有对第三方 API 的调用都要包在里面，这样依赖缺失时类不会被链接。
-- `addCommonListener` / `addClientListener` 由子类覆写；客户端分支由基类统一判断，子类不用自己判断端。
-- `initNetwork` 让兼容层能注册自己的 payload。
-- 日志用 `LOGGER`（见 [logging-and-util.md](logging-and-util.md)）。
+- [NeoForge ICompatUtils](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/compat/ICompatUtils.java)
+- [Forge ICompatUtils](../templates/forge1.20.1/src/main/java/io/zershyan/examplemod/compat/ICompatUtils.java)
 
 ## 加载器差异
 
-`ICompatUtils` 与加载器相关。**接口方法名与整体格式完全一致**，两个世代按下表调整：
-
-| 项 | NeoForge（1.21.x） | Forge（1.20.1） |
+| 项目 | NeoForge 1.21.1 | Forge 1.20.1 |
 |---|---|---|
-| `IEventBus` 导入 | `net.neoforged.bus.api.IEventBus` | `net.minecraftforge.eventbus.api.IEventBus` |
-| 客户端判断 | `FMLLoader.getDist() == Dist.CLIENT` | `FMLEnvironment.dist == Dist.CLIENT` |
-| 网络参数 | `PayloadRegistrar` | `SimpleChannel` |
+| `IEventBus` | `net.neoforged.bus.api.IEventBus` | `net.minecraftforge.eventbus.api.IEventBus` |
+| 模板客户端判断 | `FMLLoader.getDist() == Dist.CLIENT` | `FMLEnvironment.dist == Dist.CLIENT` |
+| 网络注册参数 | `PayloadRegistrar` | `net.minecraftforge.network.simple.SimpleChannel` |
 
-### NeoForge 版
+`addCommonListener` / `addClientListener` 由兼容实现覆写；客户端分支由接口统一判断。具体监听挂到其事件所属总线：例如 common/client setup 属于 mod 总线，不能因为方法名有 Common 或 Client 就挂到游戏总线。
 
-```java
-package io.zershyan.<modid>.compat;
+## 工厂与接线
 
-import io.zershyan.<modid>.<ModId>;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.fml.loading.FMLLoader;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+- 工厂名为 `<ModId>CompatFactory`；启用混淆时使用既有的 `CompatFactory` 命名。
+- 每个实现以工厂中的 `public static final` 字段暴露，`addCompat` 使用 `Set` 去重，重复添加抛异常。
+- 主类统一调用 `CompatFactory.register(gameBus, modBus)`，由工厂遍历并调用 `initial(...)`。
+- 主模组网络注册处调用 `CompatFactory.registerNetwork(...)`，再由工厂调用各实现的 `initNetwork(...)`；不要漏掉兼容消息注册。
+- 包处理器仍是消息自身的实例方法，遵守 [网络约定](network.md)。
 
-import java.util.concurrent.Callable;
+接线与实现参考：
 
-public interface ICompatUtils {
-    Logger LOGGER = LoggerFactory.getLogger(ICompatUtils.class);
+| 位置 | NeoForge 1.21.1 | Forge 1.20.1 |
+|---|---|---|
+| 工厂 | [ExampleModCompatFactory](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/compat/ExampleModCompatFactory.java) | [ExampleModCompatFactory](../templates/forge1.20.1/src/main/java/io/zershyan/examplemod/compat/ExampleModCompatFactory.java) |
+| 兼容实现 | [ExampleLibCompat](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/compat/examplelib/ExampleLibCompat.java) | [ExampleLibCompat](../templates/forge1.20.1/src/main/java/io/zershyan/examplemod/compat/examplelib/ExampleLibCompat.java) |
 
-    // ... testLoadedAndRun / testLoadedAndCall 同上 ...
+## 调用与对外能力
 
-    default void addListener(IEventBus forgeBus, IEventBus modBus) {
-        addCommonListener(forgeBus, modBus);
-        if (FMLLoader.getDist() == Dist.CLIENT) {
-            addClientListener(forgeBus, modBus);
-        }
-    }
+通用调用点委托给依赖专属实现；由该实现把实际第三方调用包在 `testLoadedAndRun` 中。不要为了展示检查方法而把第三方类型直接写进通用调用点。
 
-    default void initNetwork(PayloadRegistrar registrar) {
-        try {
-            testLoadedAndRun(() -> registerNetwork(registrar));
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
-        }
-    }
-
-    default void registerNetwork(PayloadRegistrar registrar) {
-    }
-
-    boolean isModLoaded();
-}
-```
-
-### Forge 版
-
-```java
-package io.zershyan.<modid>.compat;
-
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.network.simple.SimpleChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.Callable;
-
-public interface ICompatUtils {
-    Logger LOGGER = LoggerFactory.getLogger(ICompatUtils.class);
-
-    // ... testLoadedAndRun / testLoadedAndCall 同上 ...
-
-    default void addListener(IEventBus forgeBus, IEventBus modBus) {
-        addCommonListener(forgeBus, modBus);
-        if (FMLEnvironment.dist == Dist.CLIENT) {
-            addClientListener(forgeBus, modBus);
-        }
-    }
-
-    default void initNetwork(SimpleChannel channel) {
-        try {
-            testLoadedAndRun(() -> registerNetwork(channel));
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage());
-        }
-    }
-
-    default void registerNetwork(SimpleChannel channel) {
-    }
-
-    boolean isModLoaded();
-}
-```
-
-## 兼容工厂
-
-工厂负责持有全部兼容实现，并在主类里一次性触发。
-
-```java
-public class <ModId>CompatFactory {
-    private static final Set<ICompatUtils> compatUtils = new HashSet<>();
-
-    public static final <被兼容mod>Compat <字段名> = addCompat(new <被兼容mod>Compat());
-
-    private static <T extends ICompatUtils> T addCompat(T utils) {
-        if (compatUtils.add(utils)) {
-            return utils;
-        } else throw new IllegalStateException("CompatUtils already added.");
-    }
-
-    public static void register(IEventBus forgeEventBus, IEventBus modEventBus) {
-        compatUtils.forEach(compatUtils -> compatUtils.initial(forgeEventBus, modEventBus));
-    }
-
-    public static void registerNetwork(PayloadRegistrar registrar) {
-        compatUtils.forEach(compatUtils -> compatUtils.initNetwork(registrar));
-    }
-}
-```
-
-要点：
-
-- 工厂类名 `<ModId>CompatFactory`（无混淆时；混淆时 `CompatFactory`）。
-- 每个兼容实现在工厂里声明为 `public static final` 字段，便于其他地方直接取用。
-- `addCompat` 用 `Set` 去重，重复添加直接抛异常，避免静默重复注册。
-- `registerNetwork` 让兼容层接入主 mod 的 payload 注册流程，**网络注册处必须调用它**，否则兼容层的 payload 不会注册。
-
-## 兼容实现
-
-```java
-public class ExampleCompat implements ICompatUtils {
-    public static final String MODID = "<被兼容modid>";
-
-    @Override
-    public boolean isModLoaded() {
-        return ModList.get().isLoaded(MODID);
-    }
-
-    @Override
-    public void addCommonListener(IEventBus forgeBus, IEventBus modBus) {
-        forgeBus.register(ExampleServerRegistry.class);
-        ExampleEntities.register(modBus);
-    }
-
-    @Override
-    public void addClientListener(IEventBus forgeBus, IEventBus modBus) {
-        forgeBus.register(ExampleClientRegistry.class);
-    }
-
-    @Override
-    public void registerNetwork(PayloadRegistrar registrar) {
-        registrar.playToServer(ExampleCompatData.TYPE, ExampleCompatData.STREAM_CODEC, ExampleCompatData::handle);
-    }
-}
-```
-
-## 主类接线
-
-```java
-public <ModId>(IEventBus modEventBus, Dist dist, ModContainer modContainer) {
-    IEventBus neoEventBus = NeoForge.EVENT_BUS;
-
-    <ModId>Items.doRegister(modEventBus);
-    // ...
-
-    //compat
-    <ModId>CompatFactory.register(neoEventBus, modEventBus);
-}
-```
-
-网络注册处：
-
-```java
-private static void register(RegisterPayloadHandlersEvent event) {
-    PayloadRegistrar registrar = event.registrar(PROTOCOL_VERSION);
-    registrar.playToServer(...);
-    // 兼容层的 payload 由工厂统一注册
-    <ModId>CompatFactory.registerNetwork(registrar);
-}
-```
-
-## 对外暴露
-
-需要让其他 mod 调用的兼容能力，走 `api` 包转发（见 [api.md](api.md)）：api 内部调 compat，compat 不反向依赖 api。
+返回值调用使用 `testLoadedAndCall` 并提供明确默认值。需要供其他模组调用的能力，由 `api/` 转发到 compat；compat 不反向依赖本模组 API，见 [对外 API](api.md)。
 
 ## 完成前检查
 
-- 所有第三方 API 调用是否都包在 `testLoadedAndRun` / `testLoadedAndCall` 里？
-- 依赖缺失时模组是否仍能启动（实际移除该依赖测一次）？
-- 兼容子包是否按被兼容 modid 命名？
-- 主类是否调用了 `CompatFactory.register`？网络注册处是否调用了 `CompatFactory.registerNetwork`？
-- 兼容代码是否只在对应依赖存在时才注册？
+- 第三方类型是否只在依赖专属代码中出现，调用是否经过检查入口？
+- 兼容事件是否挂对总线，网络注册是否接入工厂？
+- 依赖存在时功能是否可用；**实际移除可选依赖后**，客户端与专用服务器是否仍能启动？
+- 兼容子包、注册入口与 API 依赖方向是否符合项目约定？

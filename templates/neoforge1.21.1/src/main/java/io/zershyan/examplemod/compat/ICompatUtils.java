@@ -11,7 +11,7 @@ import java.util.concurrent.Callable;
 
 /**
  * 可选依赖兼容工具。所有对第三方 API 的调用都必须包在
- * testLoadedAndRun / testLoadedAndCall 内，依赖缺失时类不会被链接。
+ * testLoadedAndRun / testLoadedAndCall 内，并把第三方类型隔离在依赖专属实现中。
  */
 public interface ICompatUtils {
     Logger LOGGER = LoggerFactory.getLogger(ICompatUtils.class);

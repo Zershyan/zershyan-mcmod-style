@@ -1,45 +1,30 @@
 # Mixin 与 MixinPlugin
 
-## refmap
+## 版本与 refmap
 
-**NeoForge 不需要 `refmap`**，NeoForge 内部会自动转换，不要写 `refmap` 字段。
+| 目标 | 配置与打包 |
+|---|---|
+| NeoForge 1.21.1 | `JAVA_21`，不声明 refmap，由加载器处理映射转换 |
+| Forge 1.20.1 | `JAVA_17`，声明 `<modid>.refmap.json`，配置注解处理器生成映射，成品 manifest 包含 `MixinConfigs` |
 
-**Forge 1.20.1 必须写 refmap**：配置文件包含 `"refmap": "<modid>.refmap.json"`，并使用 `JAVA_17`。LegacyForge 在 `legacyForge.mixin` 中调用 `add sourceSets.main, "${mod_id}.refmap.json"` 与 `config "${mod_id}.mixins.json"`，由 Mixin 注解处理器生成映射；成品 jar 的 manifest 还需显式添加 `MixinConfigs: <modid>.mixins.json`，不能只依赖开发运行配置。不要额外引入 MixinGradle。完整构建写法见 [build.md](build.md)。
+Forge 使用 LegacyForge 的 `mixin.add` / `mixin.config`，不额外引入 MixinGradle。完整构建写法见 [构建与发布](build.md)；不能只配置开发运行参数而遗漏发布 jar 的清单项。
 
-## 必须使用 MixinPlugin
+## 插件与加载条件
 
-`<ModId>MixinPlugin extends IMixinConfigPlugin`，核心是重写 `shouldApplyMixin`：
+必须使用 `<ModId>MixinPlugin implements IMixinConfigPlugin`，在 `shouldApplyMixin` 中统一判断：
 
-```java
-/**
- * mixin软件包下其他Mixin类请严格按照 "modid/modid/.../MixinXXX.class"来命名<br><br>
- * 程序会遍历软件包名，检查是否加载了modid与软件包名一致的mod<br>若无则不会加载该软件包的所有mixinClass<br><br>
- * 若遍历到的软件包名为client/server/common中的任意一个<br>其软件包内的所有mixinClass都会生效
- */
-@Override
-public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-    List<ModInfo> modInfos = LoadingModList.get().getMods();
-    List<String> modList = modInfos.stream().map(ModInfo::getModId).toList();
-    String modIds = mixinClassName.replace(this.getClass().getPackageName() + ".", "").replaceAll("^(.*)(\\.).*$", "$1");
-    for (String string : modIds.split("\\.")) {
-        if ("client".equals(string) || "server".equals(string) || "common".equals(string)) {
-            return true;
-        } else if (!modList.contains(string)) return false;
-    }
-    return true;
-}
-```
+1. `example.mixin.` 路径始终不加载，见 [示例代码](example.md)。
+2. 去掉插件所在 Mixin 根包与类名后，逐段检查相对包名。
+3. 非 `client` / `server` / `common` 的包名段按 modid 检查；任一依赖未安装即拒绝加载。
+4. 到达 `client` / `server` / `common` 段时放行，因此依赖段必须置于这些分端段之前。
 
-该逻辑的语义：
+插件的包名判断不代替物理端隔离：客户端 Mixin 仍须列在配置的 `client` 项，不能因为包名含 client 就放进通用列表。
 
-- mixin 类包名中，`client` / `server` / `common` 段直接放行（本 mod 自己的 mixin）。
-- 其余包名段被当作 modid 查 `LoadingModList`：**对应 mod 未安装则该包下所有 mixin 都不加载**。
+实现：[NeoForge 插件](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/mixin/ExampleModMixinPlugin.java)、[Forge 插件](../templates/forge1.20.1/src/main/java/io/zershyan/examplemod/mixin/ExampleModMixinPlugin.java)。LoadingModList / ModInfo 按目标加载器导入，不混用包名前缀。
 
-## 包名规则
+## 包结构与命名
 
-**以 modid 作为包名**，可嵌套实现多 mod 兼容。
-
-```
+```text
 mixin/
 ├── <本modid>/
 │   ├── client/MixinMinecraft.java
@@ -48,25 +33,14 @@ mixin/
 └── <ModId>MixinPlugin.java
 ```
 
-**多 mod 嵌套示例**：已装 ModA、又装了 ModB，要 mixin ModB → 包路径为
+- Mixin 类统一 `Mixin + 目标类名`，例如 `MixinServerPlayer`。
+- 以 modid 作为包名；同时依赖多个模组时嵌套，如 `mixin.moda.modb.MixinXxx`，只有两个模组都存在才加载。
+- 对外桥接接口命名 `IMixin + 目标类名`，放 `util/mixin/`，并镜像 Mixin 相对于 `mixin/` 的子包。例如 `mixin/<modid>/common/MixinLivingEntity` 对应 `util/mixin/<modid>/common/IMixinLivingEntity`。
+- 为兼容依赖创建的接口同样保留依赖 modid 子包，不直接丢在通用工具包。
 
-```
-io.zershyan.<本modid>.mixin.moda.modb.MixinXXX
-```
+## Mixin 配置
 
-## 类命名
-
-必须 `Mixin + 目标类名`：mixin `ServerPlayer` → `MixinServerPlayer`。
-
-## Mixin 接口
-
-- 统一放 `util/mixin/` 下，命名 `IMixin + 目标类名`。
-- **必须与 mixin 类的包结构保持一致**。
-- 为多 mod 兼容而写的接口，放 `util/mixin/` 下对应 mod 的子包：如 `util/mixin/<depmodid>/IMixinXxx`。
-
-## mixins.json
-
-以下为 NeoForge 1.21.1 格式；Forge 1.20.1 改为 `JAVA_17` 并添加 `refmap`，其余结构不变。
+下面是 NeoForge 1.21.1 的结构示意；Forge 1.20.1 改为 `JAVA_17` 并补上 `"refmap": "<modid>.refmap.json"`。
 
 ```json
 {
@@ -82,8 +56,9 @@ io.zershyan.<本modid>.mixin.moda.modb.MixinXXX
 }
 ```
 
-NeoForge 不要写 `refmap`；Forge 1.20.1 必须添加。
+## 职责与检查
 
-## 职责边界
-
-Mixin 只负责精确开洞、桥接或传递结果，复杂玩法放到事件或领域逻辑（`handler/`）。
+- Mixin 只做精确注入、桥接或传递结果；复杂逻辑放领域实现。使用非注册事件的逻辑才归 `handler/`，不能把所有玩法代码都强行放进去。
+- 检查目标方法签名、注入点和版本映射，验证客户端与专用服务器路径。
+- 缺少可选依赖时对应 Mixin 不加载；示例 Mixin 始终过滤。
+- Forge 成品必须同时包含 Mixin 配置、非空 refmap 和 manifest 声明。

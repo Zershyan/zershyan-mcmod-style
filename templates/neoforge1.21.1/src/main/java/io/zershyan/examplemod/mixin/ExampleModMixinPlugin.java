@@ -20,20 +20,17 @@ public class ExampleModMixinPlugin implements IMixinConfigPlugin {
         return "";
     }
 
-    /**
-     * mixin软件包下其他Mixin类请严格按照 "modid/modid/.../MixinXXX.class"来命名<br><br>
-     * 程序会遍历软件包名，检查是否加载了modid与软件包名一致的mod<br>若无则不会加载该软件包的所有mixinClass<br><br>
-     * 若遍历到的软件包名为client/server/common中的任意一个<br>其软件包内的所有mixinClass都会生效
-     */
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        List<ModInfo> modInfos = LoadingModList.get().getMods();
-        List<String> modList = modInfos.stream().map(ModInfo::getModId).toList();
-        String modIds = mixinClassName.replace(this.getClass().getPackageName() + ".", "").replaceAll("^(.*)(\\.).*$", "$1");
-        for (String string : modIds.split("\\.")) {
-            if ("client".equals(string) || "server".equals(string) || "common".equals(string)) {
+        if (mixinClassName.contains(".example.mixin.")) return false;
+        List<String> modIds = LoadingModList.get().getMods().stream().map(ModInfo::getModId).toList();
+        String relativeName = mixinClassName.substring(getClass().getPackageName().length() + 1);
+        String packageName = relativeName.substring(0, relativeName.lastIndexOf('.'));
+        for (String segment : packageName.split("\\.")) {
+            if ("client".equals(segment) || "server".equals(segment) || "common".equals(segment)) {
                 return true;
-            } else if (!modList.contains(string)) return false;
+            }
+            if (!modIds.contains(segment)) return false;
         }
         return true;
     }

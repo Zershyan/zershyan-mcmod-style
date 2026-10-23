@@ -6,7 +6,7 @@
 
 ## 位置与命名
 
-`api/<ModName>Api.java`，命名用 `Api`（不是 `API`）。
+`api/<ModId>Api.java`，命名用 `Api`（不是 `API`），与主类名前缀一致。
 
 ## 分层
 
@@ -28,8 +28,8 @@ api/
 
 ## 依赖方向（硬性）
 
-- **`api` 包不被其他包依赖**。
-- 若需使用 api 的功能，由 api 调用其他包的逻辑；**不允许其他包依赖 api 包**。
+- **本模组内部其他包不得依赖 `api` 包**；外部模组通过 API 调用不在此禁令内。
+- API 门面调用内部领域实现；内部代码复用该实现，不反向绕回 API。
 - `api` 内容需**尽量少依赖其他包**，因为它是对外的稳定面。
 
 ```
@@ -65,7 +65,7 @@ public class <ModId>Api {
 
 ## 客户端方法
 
-api 中的客户端专属方法用 `@OnlyIn(Dist.CLIENT)` 标注，且只在客户端调用路径上可达：
+API 的客户端专属方法按项目约定标注 `@OnlyIn(Dist.CLIENT)`，并只在客户端路径调用。注解不能替代实际类加载隔离；不能在通用静态初始化中引用 Minecraft 等客户端类。以下计时 API 仅对应 NeoForge 1.21.1，其他版本核对签名：
 
 ```java
 @OnlyIn(Dist.CLIENT)
@@ -76,7 +76,7 @@ public static float clientGetPartialTick() {
 
 ## Javadoc
 
-对外 API 需要 Javadoc，用中文（见注释规范）。标注 `@param` / `@return`。
+对外 API 使用简明中文 Javadoc，按需标注 `@param` / `@return`，说明调用端、前置条件和失败结果，不重复方法名。
 
 ## 完成前检查
 

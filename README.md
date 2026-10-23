@@ -1,21 +1,28 @@
 # zershyan-mcmod-style
 
-一个 Agent Skill，记录了 [Zershyan](https://github.com/Zershyan) 名下 Minecraft 模组工程的**自有约定**：包结构与命名、注册入口、网络与配置写法、Mixin 组织、版本号与打包流程、构建脚本骨架等。这些内容无法从 NeoForge 官方文档推导，属于项目事实。
+为 Zershyan 的 `io.zershyan` 系列 Minecraft 模组提供项目约定和可复用工程模板：包结构、注册入口、双端隔离、API、兼容、网络、配置、Mixin、Datagen 与构建发布。
 
-通用 NeoForge / Forge API 用法不在本仓库范围内。
+通用 Forge / NeoForge API 仍以目标版本的官方文档和依赖源码为准；不要求安装其他模组规范 skill。
 
-## 目录结构
+## 阅读入口
 
-| 路径 | 说明 |
-|---|---|
-| `SKILL.md` | Skill 入口：使用契约、全局不可违反的边界、必须询问用户的事项 |
-| `references/` | 按主题拆分的规范文档，路由见 [references/index.md](references/index.md) |
-| `templates/neoforge1.21.1/` | NeoForge 1.21.1 完整工程模板，已实测 `compileJava` 与 `runData` |
-| `templates/forge1.20.1/` | Forge 47.3.4 / Java 17（LegacyForge）完整工程模板，已实测编译、datagen 与打包 |
+- [SKILL.md](SKILL.md)：使用流程、核心边界、用户决策项与模板说明。
+- [主题索引](references/index.md)：按任务加载主文档及必要的关联主题，不必一次读完全部参考资料。
 
-两套模板的 modid 均为占位用的 `examplemod`，新建同世代项目时复制对应模板，再改 modid 与包名。
+## 工程模板
+
+| 目标 | 构建入口 | 基线 |
+|---|---|---|
+| NeoForge 1.21.1 | [构建脚本](templates/neoforge1.21.1/build.gradle) | Java 21、CustomPacketPayload、DataComponents |
+| Forge 1.20.1 | [构建脚本](templates/forge1.20.1/build.gradle) | Forge 47.3.4、Java 17、LegacyForge、SimpleChannel、NBT |
+
+两套模板的 modid 均为 `examplemod`。先确认目标版本，再替换标识并裁剪演示功能，步骤见 [构建与发布](references/build.md)。Forge 模板含附件演示：**无附件需求必须裁剪 ForgeAttachment 及其调用**；保留时遵守 [用户告知与依赖规则](references/forgeattachment.md)。
+
+其他 MC 版本暂无对应模板，不能把 1.21.1 的入口、元数据或 API 直接套用。
 
 ## 维护约定
 
-- 规范变更后**模板必须跟着改**，并重新跑 `compileJava` 与 `runData` 验证，两者不允许不一致。
-- 遇到与规范不符的仓库，以该仓库实际代码为准，同时把它当作修正本规范的信号。
+- 规则影响实现时，文档与两套模板同步；完整实现链接模板，避免多处复制后漂移。
+- 模板改动后运行 `compileJava`、`runData`，构建或打包改动另查最终 jar；只报告实际执行的结果。
+- 发现已有工程与规范不符时先核对原因和迁移范围，不擅自改造旧代码。
+- 纯措辞与路由调整校验文档、链接和关键约定，不把历史构建记录写成长期保证。

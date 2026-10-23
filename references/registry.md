@@ -1,118 +1,73 @@
 # 注册与 registry
 
-## 核心原则
+## 范围与入口
 
-**所有与注册有关的内容必须放在 `registry` 包下，即使其注册方式是事件。**
+**所有注册相关内容归 `registry/`，事件驱动的注册也不例外。** 例如 overlay 由 `<ModId>Overlays.doRegister(...)` 挂监听，不改用独立 `@EventBusSubscriber` 把入口藏起来。
 
-典型例子：注册 overlay 在 NeoForge / Forge 都是通过事件完成的，但依据本原则，仍要有 `<ModId>Overlays` 类，且内部使用 `doRegister`，**而不是 `@EventBusSubscriber`**。
-
-## 判定标准
-
-| 内容 | 是否进 registry |
+| 内容 | 归属 |
 |---|---|
-| 注册项本身（物品、方块、声音、属性…） | 是 |
-| 注册项的属性 / 行为定义（如 `item/properties/`、`item/behavior/`） | 是 |
-| 注册时必需的数据（如 `attachment/sub/` 下的 DTO） | 是 |
-| 注册动作（`doRegister`） | 是 |
-| 自定义注册表及其注册项 | 是 |
-| 仅使用已注册对象 | 否 → 功能域 |
+| 注册项、其属性 / 行为定义 | `registry/` 及对应子包 |
+| 注册时必需的数据，如附件数据与辅助结构 | `registry/` 及对应子包 |
+| 注册动作、自定义注册表及其条目 | `registry/` |
+| 只使用已注册对象的业务逻辑 | 所属功能域，不因使用注册对象就搬入 registry |
 
-边界不清时**先问用户**。
+每个注册领域维护一个入口类，唯一公共接入方法名为 **`doRegister`**。参数明确表达所需上下文：mod / 游戏总线、ModContainer 或实际注册事件；无上下文需求时可无参。
 
-## 注册入口
+- 主类只编排入口，不散落 `addListener`、`registerConfig` 或 `DeferredRegister.register`。
+- 有的 API 直接提供注册事件，既有工程可使用 `doRegister(RegisterLayerDefinitions event)` 等形式，仍不改变归属。
+- 可选依赖独有注册放 `compat/<依赖modid>/registry/`，经 [兼容工厂](compat.md) 接线；已有 Capability 结构见 [附件与能力](attachments.md)。
+- 边界不清，或遇到清单之外的注册类型时，先询问用户，不擅自扩大清单或挪入 handler。
 
-- 每个注册领域一个类，唯一入口方法名 **`doRegister`**。
-- 入口参数显式表达所需上下文：`IEventBus`（mod 总线 / forge 总线）、`ModContainer` 等。
-- 主类中不得散落 `addListener(...)`、`registerConfig(...)`、`DeferredRegister.register(...)`。
+## 常见注册领域
 
-```java
-public final class <ModId>Items {
-    public static void doRegister(IEventBus modBus) {
-        // 注册细节收拢在此
-    }
-}
-```
+| 入口类后缀 | 对应内容或子包 |
+|---|---|
+| Items、Blocks、BlockEntityTypes、Entities、Sounds、Attributes | 物品、方块、方块实体、实体、声音、属性；如 `item/`、`block/`、`block/entity/` |
+| Packets | `packet/`，见 [网络](network.md) |
+| Configs | `config/`，见 [配置](config.md) |
+| Commands | `command/`，见 [命令](commands.md) |
+| Attachments | `attachment/`，见 [附件](attachments.md) |
+| DataComponents | `data_component/`，仅适用支持该系统的目标版本 |
+| CreativeTab、Overlays、KeyMappings、EntityLayers | 创造标签页与客户端注册；如 `overlay/`、`renderer/` |
+| Registries | 只管理自定义注册表声明，不收容杂项注册 |
 
-## 常见注册类型（参考清单，非穷举）
-
-参考清单已剔除 mod 特有的非平台接口项。
-
-**注册类**：`<ModId>Items`、`<ModId>Sounds`、`<ModId>Blocks`、`<ModId>BlockEntityTypes`、`<ModId>Entities`、`<ModId>Packets`、`<ModId>Configs`、`<ModId>Commands`、`<ModId>Attributes`、`<ModId>Attachments`、`<ModId>CreativeTab`、`<ModId>DataComponents`、`<ModId>Overlays`、`<ModId>KeyMappings`、`<ModId>EntityLayers`、`<ModId>Registries`（启用混淆时前缀换成 `Mod`）。
-
-**子包**：`item/`、`block/`、`block/entity/`、`command/`、`config/`、`packet/`、`overlay/`、`attachment/`、`data_component/`、`renderer/`。
-
-**遇到清单之外、且属于注册的类型时，先询问用户是否写入 `registry`。**
+未混淆项目用 `<ModId>*` 前缀，混淆项目用 `Mod*`，见 [命名规范](naming-and-layout.md)。这是参考清单，不是每个项目都要创建的文件列表。
 
 ## 自定义注册表
 
-`<ModId>Registries` 专门用于**注册自定义注册表**（自定义 Registry），不是杂项注册的收容处。
-
-```java
-public class ExampleModRegistries {
-    public static final ResourceKey<Registry<IExampleStyle>> CUSTOM_REGISTRY_KEY =
-            ResourceKey.createRegistryKey(ExampleMod.id("custom_registry"));
-
-    public static final Registry<IExampleStyle> CUSTOM_REGISTRY =
-            new RegistryBuilder<>(CUSTOM_REGISTRY_KEY).create();
-
-    public static void createRegistry(NewRegistryEvent event) {
-        event.register(CUSTOM_REGISTRY);
-    }
-
-    public static void doRegister(IEventBus modBus) {
-        modBus.addListener(ExampleModRegistries::createRegistry);
-    }
-}
-```
-
-自定义注册表建好后，具体注册项用 `DeferredRegister.create(该注册表, MODID)` 写入，并配套一个注册入口类：
-
-```java
-public class ExampleModCustomRegistries {
-    public static final DeferredRegister<IExampleStyle> REGISTER =
-            DeferredRegister.create(ExampleModRegistries.CUSTOM_REGISTRY, ExampleMod.MODID);
-
-    public static final Holder<IExampleStyle> SIMPLE = REGISTER.register("simple", SimpleExampleStyle::new);
-
-    public static void doRegister(IEventBus modBus) {
-        REGISTER.register(modBus);
-    }
-}
-```
-
-对应的目录结构：
-
-```
+```text
 registry/
-├── ExampleModRegistries.java              自定义注册表声明
-├── ExampleModCustomRegistries.java        注册项入口
-└── custom_registry/                       注册表名作子包
-    ├── builder/IExampleStyle.java         类型接口
-    └── SimpleExampleStyle.java            具体实现
+├── <ModId>Registries.java
+├── <ModId>CustomRegistries.java
+└── custom_registry/
+    ├── builder/IExampleStyle.java
+    └── SimpleExampleStyle.java
 ```
 
-要点：
-
-- 注册表名（如 `custom_registry`）同时是子包名与资源路径。
+- 注册表名同时作为资源路径与子包名。
 - 类型接口放该子包的 `builder/`，具体实现平铺在子包内。
-- 注册项的语言键用 `toLanguageKey("<注册表名>", "desc")`，在语言基类提供对应辅助方法。
-- `RegistryBuilder` 的注册动作挂在 mod 总线的 `NewRegistryEvent` 上。
+- 注册表声明和具体条目分开：`<ModId>Registries` 创建注册表，对应条目入口维护 DeferredRegister。
+- 语言键用 `toLanguageKey("<注册表名>", "desc")`，由语言基类提供辅助方法，见 [Datagen](datagen.md)。
+
+| 目标 | 自定义注册表方式 |
+|---|---|
+| NeoForge 1.21.1 | 用目标版本 RegistryBuilder 构造 Registry，在 mod 总线的 NewRegistryEvent 注册；条目通过 `DeferredRegister.create(该注册表, MODID)` 加入 |
+| Forge 1.20.1 | 在 NewRegistryEvent 调用 `event.create(new RegistryBuilder<T>().setName(key.location()))`，保留 `Supplier<IForgeRegistry<T>>`，事件后才访问；条目通过 `DeferredRegister.create(key, MODID)` 注册 |
+
+完整实现：
+
+- [NeoForge 注册表声明](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/registry/ExampleModRegistries.java)、[NeoForge 条目注册](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/registry/ExampleModCustomRegistries.java)
+- [Forge 注册表声明](../templates/forge1.20.1/src/main/java/io/zershyan/examplemod/registry/ExampleModRegistries.java)、[Forge 条目注册](../templates/forge1.20.1/src/main/java/io/zershyan/examplemod/registry/ExampleModCustomRegistries.java)
 
 ## Forge 1.20.1 差异
 
-- `DeferredRegister`、`RegistryObject`、`ForgeRegistries` 来自 `net.minecraftforge.registries`；不使用 NeoForge 的 `DeferredItem`、`DeferredBlock`。
-- 自定义注册表仍归 `<ModId>Registries`。在 mod 总线的 `NewRegistryEvent` 中调用 `event.create(new RegistryBuilder<T>().setName(key.location()))`，保留返回的 `Supplier<IForgeRegistry<T>>`，事件后才访问其值；具体注册项通过 `DeferredRegister.create(key, MODID)` 注册。
-- ItemStack 自定义数据改用 NBT，不建 `<ModId>DataComponents`，也不创建 `registry/data_component/`。
-- overlay 使用 `RegisterGuiOverlaysEvent` / `IGuiOverlay`，仍由 `<ModId>Overlays.doRegister(modBus)` 挂监听，不挪进 handler。
-- 附件类型通过 forgeattachment 的注册表键注册，见 [forgeattachment.md](forgeattachment.md)。
+- DeferredRegister、RegistryObject、ForgeRegistries 来自 `net.minecraftforge.registries`，不用 NeoForge 的 DeferredItem / DeferredBlock。
+- ItemStack 自定义数据用 NBT，不建 DataComponents 注册类或 `registry/data_component/`。
+- Overlay 使用 RegisterGuiOverlaysEvent / IGuiOverlay，仍经 `<ModId>Overlays.doRegister(modBus)` 挂监听。
+- 只有需要附件时才通过 ForgeAttachment 注册表键注册，见 [依赖接入](forgeattachment.md)。
 
-## registry 内部子包约定
+## 完成前检查
 
-- `registry/config/` —— 配置，见 [config.md](config.md)
-- `registry/packet/` —— 网络包，见 [network.md](network.md)
-- `registry/command/` —— 命令，见 [commands.md](commands.md)
-- `registry/attachment/` —— 附件数据类，见 [attachments.md](attachments.md)
-
-## 注意
-
-部分注册的 `doRegister` 入参是具体事件（而非总线），如 `<ModId>EntityLayers.doRegister(RegisterLayerDefinitions event)`、`<ModId>KeyMappings.doRegister(RegisterKeyMappingsEvent event)`。是否采用这种形式取决于该注册 API 的提供方式，以既有代码为准。
+- 注册入口、注册项与必需数据是否集中，主类是否只调用 `doRegister`？
+- 事件是否挂在正确总线，客户端注册是否隔离？
+- 新类型的归属是否明确，自定义注册表是否与条目入口分离？

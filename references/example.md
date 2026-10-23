@@ -1,42 +1,33 @@
 # 示例代码
 
-## 默认不写
+## 放置与裁剪
 
-**一般情况下不需要写 example，除非用户额外要求。**
+可复用脚手架、教学用法和只供参考的 Mixin 放 `example/`。路径镜像正式结构，例如 `example/mixin/...`、`example/registry/...`；正式代码仍遵守 [布局与命名](naming-and-layout.md)。
 
-## 启用条件
+示例不应在正式发布后意外生效。模板中的文件是可裁剪的起点，不代表每个新项目都必须保留对应功能。
 
-写 example 时，要求**开发环境与开关同时满足**：
+## 普通示例的启用条件
 
-```java
-if (!FMLEnvironment.production && StartupConfig.enableExample.get()) {
-    ExampleHandler.doRegister(modEventBus, neoEventBus);
-}
+同时满足开发环境与项目示例开关才执行：
+
+```text
+!FMLEnvironment.production && 项目已有的示例开关
 ```
 
-- 开发环境判断用 `!FMLEnvironment.production`（`FMLEnvironment` 只有 `public static final boolean production` 字段，**没有** `isProduction()` 方法）。
-- 开关来自 `gradle.properties`，如 `enableExample=true`。
-- 两者缺一不可：避免示例代码进入正式包，也便于单独关闭。
+- 开关来源沿用仓库既有实现；例如仓库从 `gradle.properties` 生成运行时常量，就复用该机制。
+- 不把未定义的 `StartupConfig.enableExample` 当成通用 API，也不为演示逻辑强制增加 Startup 配置。
+- 在统一入口检查开关，再分发示例注册和事件，避免每个示例各写一套环境判断。
 
-## 组织
+若项目没有示例开关，先明确是否需要运行这些示例；只作为参考的代码不接入正式入口。
 
-`example/` 包内可包含自己的完整子结构，包括它自己的 registry：
+## 示例 Mixin
 
-```
-example/
-├── ExampleHandler.java
-└── registry/
-    ├── ExampleAttackEffects.java
-    └── atkEffect/
-        ├── QuickAttackEffect.java
-        └── RepeatAttackEffect.java
-```
+Mixin 由 MixinConfigPlugin 决定是否加载，不能靠普通注册开关阻止已经声明的 Mixin 生效。统一将 `example.mixin.` 路径判定为不加载；不要添加运行时启用示例 Mixin 的开关。
 
-- example 内的注册类同样用 `doRegister`。
-- example 的注册调用由主类在开关内触发，不进入正常注册链。
+完整配置和分端规则见 [Mixin](mixin.md)。
 
 ## 完成前检查
 
-- 是否同时判断了开发环境与开关？
-- 示例内容是否完全隔离在 `example/` 包内？
-- 正式构建中示例代码是否不会被注册？
+- 示例路径与正式路径对应，启用条件引用的是已定义的项目开关？
+- 生产环境不会执行普通示例，示例 Mixin 始终被插件过滤？
+- 复制示例为正式功能时已移动到正式路径，并补全注册、资源和验证？

@@ -1,45 +1,44 @@
-# 参考文档路由索引
+# 参考文档索引
 
-本文件只维护路由元数据，不重复主题规范。先读 `SKILL.md`，再从这里选文档。
+先读 [Skill 入口](../SKILL.md)，再按任务选文档。本页只维护路由，不重复主题规则。
 
-## 加载协议
+## 阅读方式
 
-- **primary**：当前主题的唯一主文档。
-- **companion**：任务明确跨越边界时才加载。
-- 默认只读 1 个 primary；不确定主题是否存在时，直接读目标仓库现有代码。
+- 默认只加载一个主题主文档；涉及注册、语言、兼容等相邻职责时，再读关联文档。
+- 代码示例按文档标注的 MC / 加载器版本使用。完整实现链接到 `templates/`，不把占位示例当作可直接编译的源码。
+- 本索引覆盖全部参考主题；新增主题时补充路由。保持 `references/` 扁平，不建立层层转发的文档链。
 
 ## 主题路由
 
-| 主题 | 触发关键词 | primary | companion |
+| 分组 | 主题与关键词 | 主文档 | 按需关联 |
 |---|---|---|---|
-| 主类与双端 | `@Mod`、主类、`Dist`、`DistExecutor`、客户端隔离、构造器 | [architecture.md](architecture.md) | [registry.md](registry.md) |
-| 包结构与命名 | package、目录、命名、拼写、`util`、`handler`、`client` | [naming-and-layout.md](naming-and-layout.md) | [architecture.md](architecture.md) |
-| 注册与 registry | 注册、`doRegister`、registry、注册项、overlay、sound、item、block | [registry.md](registry.md) | [naming-and-layout.md](naming-and-layout.md) |
-| Mixin 与 MixinPlugin | Mixin、`MixinPlugin`、`shouldApplyMixin`、`IMixinConfigPlugin`、兼容 mixin、`IMixin` | [mixin.md](mixin.md) | [registry.md](registry.md) |
-| 网络 | payload、`CustomPacketPayload`、`StreamCodec`、packet、`<ModId>Packets` | [network.md](network.md) | [registry.md](registry.md) |
-| 配置 | config、`ModConfigSpec`、`<ModId>Configs`、ClientConfig、ServerConfig | [config.md](config.md) | [registry.md](registry.md) |
-| 附件与能力 | Attachment、Capability、`<ModId>Attachments`、`<ModId>Capabilities` | [attachments.md](attachments.md) | [registry.md](registry.md) |
-| Forge 附件依赖 | forgeattachment、ForgeAttachmentApi、ForgeAttachmentRegistries、Forge 1.20.1 附件、sigh Maven、按需引入、用户告知、MC百科、CurseForge、GitHub | [forgeattachment.md](forgeattachment.md) | [attachments.md](attachments.md)、[network.md](network.md) |
-| 第三方模组兼容 | compat、可选依赖、`ICompatUtils`、`CompatFactory`、软兼容、`ModList.isLoaded`、类链接 | [compat.md](compat.md) | [registry.md](registry.md)、[mixin.md](mixin.md)（兼容 mixin 时） |
-| 日志与工具 | 日志、`LOGGER`、`id()`、`ResourceLocation`、util 工具 | [logging-and-util.md](logging-and-util.md) | [naming-and-layout.md](naming-and-layout.md) |
-| 构建与发布 | build.gradle、moddev、运行配置、Proguard、混淆、发布、新建项目、工程模板 | [build.md](build.md) | [naming-and-layout.md](naming-and-layout.md) |
-| 版本号与打包 | 版本号、`mod_version`、`mod_build_number`、`buildAlpha`、`finalizeArtifacts`、jar 命名 | [versioning.md](versioning.md) | [build.md](build.md)（启用混淆时） |
-| Datagen 与资源 | datagen、Provider、`GatherDataEvent`、语言、模型、声音、标签、资源生成 | [datagen.md](datagen.md) | [naming-and-layout.md](naming-and-layout.md) |
-| 对外 API | api、门面、`XxxApi`、helper、events | [api.md](api.md) | [naming-and-layout.md](naming-and-layout.md) |
-| 示例代码 | example、`isProduction`、示例开关 | [example.md](example.md) | [architecture.md](architecture.md) |
+| 工程 | 包结构、类名、`util`、`Handler` | [包结构与命名](naming-and-layout.md) | [注册](registry.md) |
+| 工程 | `@Mod`、构造器、Dist、双端隔离 | [主类与双端](architecture.md) | [配置](config.md)、[Mixin](mixin.md) |
+| 工程 | 对外门面、`Api`、helper、API 依赖方向 | [对外 API](api.md) | [兼容](compat.md) |
+| 工程 | `LOGGER`、`id()`、ResourceLocation、工具类 | [日志与工具](logging-and-util.md) | [包结构](naming-and-layout.md) |
+| 注册与逻辑 | 注册项、`doRegister`、registry、自定义注册表 | [注册](registry.md) | [包结构](naming-and-layout.md) |
+| 注册与逻辑 | 命令、子命令、权限、反馈消息 | [命令](commands.md) | [注册](registry.md)、[Datagen](datagen.md) |
+| 注册与逻辑 | payload、packet、StreamCodec、SimpleChannel | [网络](network.md) | [注册](registry.md)、[兼容](compat.md) |
+| 注册与逻辑 | ModConfigSpec、ForgeConfigSpec、三类配置、配置界面 | [配置](config.md) | [Datagen](datagen.md) |
+| 注册与逻辑 | Attachment、Capability、持久化、同步 | [附件与能力](attachments.md) | [注册](registry.md)、[网络](network.md) |
+| 兼容 | forgeattachment、sigh Maven、按需依赖、用户告知、发布链接 | [ForgeAttachment](forgeattachment.md) | [附件](attachments.md)、[构建](build.md) |
+| 兼容 | 可选依赖、ICompatUtils、CompatFactory、类链接 | [第三方兼容](compat.md) | [注册](registry.md)、[API](api.md) |
+| 兼容 | MixinPlugin、refmap、兼容 Mixin、IMixin 接口 | [Mixin](mixin.md) | [包结构](naming-and-layout.md) |
+| 资源与构建 | Datagen、GatherDataEvent、Lang、Provider、模型、标签 | [Datagen 与资源](datagen.md) | [注册](registry.md) |
+| 资源与构建 | 工程模板、Gradle、运行配置、元数据、ProGuard | [构建与发布](build.md) | [版本号](versioning.md) |
+| 资源与构建 | mod_version、mod_build_number、buildAlpha、jar 命名 | [版本号与产物](versioning.md) | [构建](build.md) |
+| 资源与构建 | example、开发环境、production、示例开关 | [示例代码](example.md) | [双端结构](architecture.md) |
 
-## 常见组合路由
+## 常见任务
 
-| 任务 | 读取顺序 |
+| 任务 | 阅读顺序 |
 |---|---|
-| 新建一个 mod | `build.md`（按版本选 NeoForge 或 Forge 模板）→ `naming-and-layout.md` → `architecture.md` → `registry.md`；Forge 1.20.1 需要附件时再读 `forgeattachment.md`，无需附件就不加该依赖 |
-| 新增注册项（物品/方块/声音等） | `registry.md` → `datagen.md`（需要资源时） |
-| 新增网络包 | `network.md` → `registry.md` |
-| 新增命令 | `commands.md` → `registry.md` |
-| 为第三方 mod 加兼容 mixin | `mixin.md` → `compat.md` → `registry.md` |
-| 新增一个可选依赖兼容 | `compat.md` → `registry.md`（兼容层自带注册时） |
-| 排查服务端客户端类缺失 | `architecture.md` → `mixin.md` |
+| 新建模组 | 构建 → 包结构 → 主类 → 注册；先确认 MC 版本与 API 需求，附件按需引入 |
+| 新增注册项 | 注册 → Datagen（需要资源时） |
+| 新增网络包 | 网络 → 注册；包含可选依赖时再读兼容 |
+| 新增命令 | 命令 → Datagen（反馈文本） |
+| 接入 ForgeAttachment | 附件 → ForgeAttachment；同时履行用户告知与链接要求 |
+| 可选依赖或兼容 Mixin | 兼容 → Mixin（需要注入时） |
+| 排查专用服务器类缺失 | 主类与双端 → 对应功能文档，检查客户端类和可选依赖的加载路径 |
 
-## 维护约定
-
-新增主题：在 `references/` 下建文档，再在表中加一行。文档名用小写连字符，与主题一一对应。链接保持一层深，不要嵌套引用。
+这些主题名称对应上表的直接链接，不要求顺序读完全部文档。

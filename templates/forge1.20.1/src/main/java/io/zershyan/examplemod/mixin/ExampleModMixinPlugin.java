@@ -21,6 +21,7 @@ public class ExampleModMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        if (mixinClassName.contains(".example.mixin.")) return false;
         List<String> modIds = LoadingModList.get().getMods().stream().map(ModInfo::getModId).toList();
         String relativeName = mixinClassName.substring(getClass().getPackageName().length() + 1);
         String packageName = relativeName.substring(0, relativeName.lastIndexOf('.'));

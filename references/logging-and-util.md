@@ -2,59 +2,39 @@
 
 ## 日志
 
-变量名统一 `LOGGER`，实现统一 `LoggerFactory.getLogger(Xxx.class)`。
+统一使用 SLF4J 的 `LoggerFactory.getLogger(本类.class)`，变量名为 `LOGGER`，不改用 LogUtils、`log` 或 `LOG`。
+
+- 主类声明 `public static final Logger LOGGER`，供项目引用。
+- 其他类确需独立日志时声明 `private static final Logger LOGGER`，绑定本类，而不是复制主类的类型。
 
 ```java
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class <ModId> {
-    public static final String MODID = "<modid>";
-    public static final Logger LOGGER = LoggerFactory.getLogger(<ModId>.class);
-}
+public static final Logger LOGGER = LoggerFactory.getLogger(<ModId>.class);
 ```
 
-**为什么不用 `LogUtils.getLogger()`**：它靠反射调用栈取类名，重构或包装后可能取错，且绑定 Minecraft API。`LoggerFactory.getLogger(Xxx.class)` 显式传类，是标准 SLF4J 用法，重构安全。
+这里保留项目约定即可，无需为选择 LoggerFactory 引入额外包装或日志依赖。
 
-**为什么变量名用 `LOGGER`**：`log` 不符合常量命名惯例，`LOG` 语义过窄；`LOGGER` 是该系列既有约定。
+## ResourceLocation 与 `id()`
 
-可见性：
+主类提供 `id(String path)`，调用形式为 `<ModId>.id("ride_player")`，资源路径使用 `lower_snake_case`。
 
-- 主类：`public static final Logger LOGGER`，供全项目引用。
-- 其他类：各自声明 `private static final Logger LOGGER`，用本类 class。
+| 目标 | `id` 方法的返回表达式 |
+|---|---|
+| NeoForge 1.21.1 | `ResourceLocation.fromNamespaceAndPath(MODID, path)` |
+| Forge 1.20.1 | `new ResourceLocation(MODID, path)` |
 
-```java
-public final class <ModId>Commands {
-    private static final Logger LOGGER = LoggerFactory.getLogger(<ModId>Commands.class);
-
-    public static void doRegister(IEventBus bus) {
-        bus.addListener(<ModId>Commands::commonCommandRegister);
-    }
-}
-```
-
-## id() 工具
-
-主类内提供，用于构造本 mod 的 `ResourceLocation`：
-
-```java
-public static ResourceLocation id(String path) {
-    return ResourceLocation.fromNamespaceAndPath(MODID, path);
-}
-```
-
-- 调用形式：`<ModId>.id("ride_player")`。
-- 路径用 `lower_snake_case`。
-- 不要在其他类里重复定义 `MODID` 常量；需要时引用主类的 `MODID`。
+其他版本核实构造接口后使用。全项目复用主类的 MODID，不在其他类重复定义，也不另建同义的资源门面。主类结构见 [双端结构](architecture.md)。
 
 ## 工具包
 
-- 统一 `util/`（单数），不用 `utils/`。
-- mixin 接口固定在 `util/mixin/`，见 [mixin.md](mixin.md)。
-- 通用工具类按用途分子包，如 `util/data/`。
+- 通用工具放 `util/`（单数），不用 `utils/`；按用途细分，如 `util/data/`。
+- Mixin 接口放 `util/mixin/`，并镜像目标 Mixin 的子包，见 [Mixin](mixin.md)。
+- Datagen 专属辅助类型留在 `datagen/util/`，不为“集中工具”破坏功能内聚。
 
 ## 完成前检查
 
-- 是否用了 `LoggerFactory` 而非 `LogUtils`？
-- 变量名是否为 `LOGGER`？
-- 是否重复定义了 `MODID`？
+- LOGGER 的命名、可见性和绑定类型正确？
+- ResourceLocation API 与目标版本匹配，是否复用了主类的 MODID 与 `id()`？
+- 工具是否有明确用途，是否确实需要抽取而非增加无意义门面？

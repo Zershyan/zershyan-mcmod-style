@@ -23,9 +23,9 @@ io/zershyan/<modid>/
 ```
 
 - **按功能分包，端再嵌套**：顶层是功能域，需要分端时在功能域下再嵌 `client`/`common`。
-- **顶层功能包可自加**：上表不是穷举。清单之外允许新增顶层包，但须**同时**满足两条——与注册无关，且是一个功能大类（如 `attachment/`、`network/`）。注册相关一律归 `registry`，不得借自加包名规避。
+- **顶层功能包可自加**：上表不是穷举。清单之外允许新增顶层包，但须**同时**满足两条——与注册无关，且是一个功能大类（如只负责动画计算的 `animation/`）。注册相关一律归 `registry`，不得借自加包名规避。
 - **`util/` 用单数**，不用 `utils/`。mixin 接口固定在 `util/mixin/`。
-- **`handler/{client,common}/`**：只放事件回调与业务逻辑，**不放注册**（注册一律在 `registry`）。判据是**是否用到事件**：用到事件的类以 `Handler` 结尾并放这里；不涉及事件、纯被调用的逻辑类留在所属功能包内即可（如 `client/`），不必为了归类而搬动并改名。
+- **`handler/{client,common}/`**：只放事件回调与业务逻辑，**不放注册**（注册一律在 `registry`）。判据是**是否使用非注册事件**：使用非注册事件的类以 `Handler` 结尾并放这里；不涉及事件、纯被调用的逻辑类留在所属功能包内即可（如 `client/`），不必为了归类而搬动并改名。
 
 ## 命名规范
 
@@ -37,7 +37,7 @@ io/zershyan/<modid>/
 
 - **注册类**：启用混淆的项目用 `Mod*`（`ModItems`、`ModSounds`）；未启用混淆的用 `<ModId>*`（`ExampleModItems`、`DSItems`）。
 - **Handler 类**：以 `Handler` 结尾，如 `KeyPressHandler`、`UntieLivingHandler`。
-- **Provider 类**：`Mod*Provider`，如 `ModLangProvider`、`ModSoundProvider`。
+- **Provider 类**：通用 Provider 用 `Mod*Provider`，如 `ModLangProvider`、`ModSoundProvider`；包元数据保留 `PackMetadataProvider`。
 - **Mixin 类**：`Mixin + 目标类名`，见 [mixin.md](mixin.md)。
 - **Mixin 接口**：`IMixin + 目标类名`，见 [mixin.md](mixin.md)。
 
@@ -46,7 +46,8 @@ io/zershyan/<modid>/
 | 内容 | 归属 |
 |---|---|
 | 注册项本身、注册项的属性/行为定义、注册时必需的数据 | `registry/` |
-| 事件回调、业务逻辑 | `handler/{client,common}/` |
+| 使用非注册事件的回调与业务逻辑 | `handler/{client,common}/` |
+| 不使用事件的领域逻辑、客户端状态或界面 | 所属功能包，如 `client/` |
 | 纯工具方法 | `util/` |
 | 对外暴露的稳定能力 | `api/` |
 | 第三方模组兼容 | `compat/<被兼容modid>/` |

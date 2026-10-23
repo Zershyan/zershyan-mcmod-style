@@ -1,172 +1,74 @@
-# 版本号规约
+# 版本号与产物
 
-**整个模组家族统一采用这一套版本号，不允许各仓库自行变形。**
+新工程使用本页约定；已有工程格式不同，先确认迁移范围，不顺带重写历史版本。完整任务实现见 [NeoForge 构建脚本](../templates/neoforge1.21.1/build.gradle) 与 [Forge 构建脚本](../templates/forge1.20.1/build.gradle)。
 
-## 版本号格式
+## 版本组成
 
-```
-<modid>-<mod版本号>-<mc版本号>+build.<构建数>
-```
+| 位置 | 格式 |
+|---|---|
+| `mod_version` 属性 | 仅模组版本，例如 `0.0.1` |
+| Gradle `version` 与包内元数据 | `<mod_version>-<minecraft_version>+build.<编号>` |
+| Gradle 默认 jar 名 | `<modid>-<Gradle version>.jar` |
+| 普通 `build` 的最终 jar 名 | `<modid>-<mod_version>-<minecraft_version>.jar` |
+| `buildAlpha` 的最终 jar 名 | `<modid>-<mod_version>-<minecraft_version>+build.<编号>.jar` |
 
-例：`examplemod-0.0.1-1.21.1+build.2`
-
-- `modid` 来自 `mod_id`（`archivesName = mod_id`）。
-- `mod版本号` 来自 `mod_version`，**只写版本号本身，不含 MC 版本**。
-- `mc版本号` 来自 `minecraft_version`，由构建脚本拼接，不手写进 `mod_version`。
-- `构建数` 来自 `mod_build_number`，每次构建递增。
-- **`build` 后必须有点**：`+build.2`，不是 `+build2`。
-
-## gradle.properties
+`modid` 来自 `mod_id`，通过 `archivesName` 用作文件名前缀，不拼进包内版本。`build` 后必须有点：`+build.2`，不能写成 `+build2`。
 
 ```properties
 minecraft_version=1.21.1
-
 mod_id=examplemod
 mod_version=0.0.1
 mod_build_number=0
 ```
 
-- `mod_version` 只写版本号（如 `0.0.1`）。
-- 换 MC 版本时只改 `minecraft_version`，`mod_version` 不动。
-- `mod_build_number` **不手工维护**：初始写 `0`，之后由 `buildAlpha` 同步为构建所用的编号（见「构建号同步」）。
+- `mod_version` 不重复填写 MC 版本；MC 版本由 `minecraft_version` 单独维护。更换 MC 时仍须同步加载器、映射等兼容配置。
+- `mod_build_number` 初始为 `0`，后续由 `buildAlpha` 维护；**不是每次编译或普通构建都递增**。
+- Forge 的 `mods.toml` 与 NeoForge 的 `neoforge.mods.toml` 都必须展开 Gradle `version`，而非原始 `mod_version`。
 
-## build.gradle 版本段
+## 两种构建行为
+
+设属性中的构建编号为 `N`：
+
+| 行为 | `build` | `buildAlpha` |
+|---|---|---|
+| 使用编号 | `N` | `N + 1` |
+| 包内版本 | 恒带所用编号 | 恒带所用编号 |
+| 最终 jar 名 | 不带编号 | 带所用编号 |
+| 成功后回写属性 | 否 | 写入 `N + 1` |
+| 失败后改变属性 | 否 | 否 |
+
+`buildAlpha` 用于生成新编号产物，普通 `build` 沿用已记录编号；重复普通构建不消耗编号。协议版本取包内版本时，也遵守这一行为，不是每次运行构建都会变化。
+
+例如从 `mod_build_number=0` 开始：
+
+| 操作 | 包内构建后缀 | 操作后属性 |
+|---|---|---|
+| `build` | `+build.0` | `0` |
+| `buildAlpha` | `+build.1` | `1` |
+| `build` | `+build.1` | `1` |
+| `buildAlpha` | `+build.2` | `2` |
+
+## 实现要求
 
 ```groovy
-group = mod_group_id
-
-// 包内版本号恒带 +build.<编号>，只有 buildAlpha 会把这个编号也写进 jar 文件名
 def isAlphaBuild = gradle.startParameter.taskNames.any { it.endsWith('buildAlpha') }
-// buildAlpha 用 +1 后的编号构建，成功后把同一编号写回 gradle.properties，
-// 使产物里的编号与 properties 始终一致
 def buildNumber = mod_build_number.toInteger() + (isAlphaBuild ? 1 : 0)
 def baseVersion = "${mod_version}-${minecraft_version}"
 version = "${baseVersion}+build.${buildNumber}"
 ```
 
-## 双轨产物
+- 新编号在内存中计算，不在构建前修改 `gradle.properties`。
+- `buildAlpha` 依赖 `build`，只有构建成功后才在自身 `doLast` 中回写**同一个**所用编号，保证属性与产物一致。
+- 任务名保持 `buildAlpha`，与模板的任务名检测逻辑一致。
+- `finalizeArtifacts` 始终挂到 `build`，不能仅在启用混淆时才整理产物。
+- 普通构建保留不带编号的最终包，把带编号原包归档到 `build/libs/origin/`。重复构建时支持从已归档原包恢复，不能假设原包始终位于顶层。
+- Alpha 最终包保留带编号的名字；包内版本不因整理文件名而改变。
 
-包内版本号与 jar 文件名**不同轨**：
+完整实现从对应模板取用，不另写一份不同语义的编号或收尾逻辑。涉及混淆时按 [构建与发布](build.md) 扩展既有收尾任务，保持混淆输出、原包与最终包各自用途，不重复注册 `finalizeArtifacts`。
 
-| 位置 | 普通 `build` | `buildAlpha` |
-|---|---|---|
-| 使用的编号 | `mod_build_number` | `mod_build_number + 1` |
-| 包内 `neoforge.mods.toml` 的 version | `0.0.1-1.21.1+build.1` | `0.0.1-1.21.1+build.2` |
-| jar 文件名 | `examplemod-0.0.1-1.21.1.jar` | `examplemod-0.0.1-1.21.1+build.2.jar` |
-| 是否回写 `mod_build_number` | **否** | **是（同步为构建所用编号）** |
+## 验证
 
-理由：**包内版本号必须恒带构建数**，便于从游戏内、日志和崩溃报告区分具体构建；而**发布用的 jar 名不带构建数**，便于下载站与用户识别正式版本。
-
-- `buildAlpha` 是**发版**动作：消耗一个新编号，产物里的编号与 `gradle.properties` 里的编号**完全一致**。
-- `build` 是**本地构建**动作：沿用上一次已发布的编号（即 `mod_build_number`），不回写，因此**重复构建不会消耗编号**。
-
-例（`mod_build_number` 从 `0` 开始）：
-
-| 执行 | 产物包内版本 | 执行后 `mod_build_number` |
-|---|---|---|
-| `build` | `+build.0` | `0`（不变） |
-| `buildAlpha` | `+build.1` | `1` |
-| `build` | `+build.1` | `1`（不变） |
-| `buildAlpha` | `+build.2` | `2` |
-
-## 构建号同步
-
-`mod_build_number` **不人工维护**。`buildAlpha` 用 `+1` 后的编号构建，构建成功后把**同一个编号**写回 `gradle.properties`：
-
-```groovy
-// buildAlpha 用 +1 后的编号构建，成功后把同一编号写回 gradle.properties，
-// 使产物里的编号与 properties 始终一致
-def buildNumber = mod_build_number.toInteger() + (isAlphaBuild ? 1 : 0)
-version = "${baseVersion}+build.${buildNumber}"
-```
-
-```groovy
-// 与 build 完全相同，只是编号 +1 并把该编号同步回 gradle.properties
-tasks.register('buildAlpha') {
-    group = 'build'
-    description = '打成 alpha 包，产物版本号带 +build.<编号>，构建成功后把该编号同步回 gradle.properties'
-    dependsOn 'build'
-    def propsFile = layout.projectDirectory.file('gradle.properties').asFile
-    def buildNumberBefore = mod_build_number
-    def buildNumberUsed = buildNumber
-    doLast {
-        def text = propsFile.getText('UTF-8')
-        def matcher = (text =~ '(?m)^mod_build_number=\\s*(\\d+)\\s*$')
-        if (!matcher.find()) {
-            logger.warn('mod_build_number not found in gradle.properties, skipped sync')
-            return
-        }
-        propsFile.setText(
-                text.replaceFirst('(?m)^mod_build_number=\\s*\\d+\\s*$', "mod_build_number=${buildNumberUsed}"),
-                'UTF-8')
-        logger.lifecycle("mod_build_number synced: ${buildNumberBefore} -> ${buildNumberUsed}")
-    }
-}
-```
-
-行为：
-
-- **编号在内存里算好，不预改 `gradle.properties`**：构建时版本号直接是 `mod_build_number + 1`，产物与随后的 properties 值一致。
-- **回写发生在构建成功之后**（`doLast`），因此构建失败不会消耗编号。
-- **只有 `buildAlpha` 回写**，普通 `build` 不动编号。
-- 日志用英文，避免 Windows 控制台中文乱码。
-
-## 打包收尾任务
-
-### finalizeArtifacts
-
-jar 默认名带构建数（因为 `version` 含它），需要改名成发布名，并把原包挪进 `origin/`：
-
-```groovy
-// 打包收尾：最终包改名到 libs 顶层，原包（带编号）挪进 libs/origin
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-
-tasks.register('finalizeArtifacts') {
-    group = 'build'
-    description = '整理 build/libs：最终包改名，原包挪进 origin 子目录'
-    def libsDir = layout.buildDirectory.dir('libs').get().asFile
-    def modId = mod_id
-    def modVersion = version
-    def releaseVersion = isAlphaBuild ? version : baseVersion
-    doLast {
-        def builtJar = new File(libsDir, "${modId}-${modVersion}.jar")
-        def backupJar = new File(new File(libsDir, 'origin'), "${modId}-${modVersion}-origin.jar")
-        if (releaseVersion != modVersion) {
-            // 最终包与原包内容一致，只是名字不带编号；原包上一轮可能已搬进 origin，就从那里取
-            def source = builtJar.exists() ? builtJar : backupJar
-            if (source.exists()) {
-                Files.copy(source.toPath(), new File(libsDir, "${modId}-${releaseVersion}.jar").toPath(), StandardCopyOption.REPLACE_EXISTING)
-                if (source == builtJar) {
-                    backupJar.parentFile.mkdirs()
-                    Files.move(builtJar.toPath(), backupJar.toPath(), StandardCopyOption.REPLACE_EXISTING)
-                }
-            }
-        } else if (!builtJar.exists() && backupJar.exists()) {
-            // buildAlpha 的最终包与原包同名，把上一轮搬走的原包取回来
-            Files.copy(backupJar.toPath(), builtJar.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        }
-    }
-}
-
-tasks.named('build') { finalizedBy 'finalizeArtifacts' }
-```
-
-`finalizeArtifacts` 必须**恒定挂到 `build` 上**，不要只在启用混淆时挂 —— 否则不启用混淆的项目不会执行改名，双轨就失效了。
-
-`isAlphaBuild` 通过检测任务名判定，因此任务名**必须是 `buildAlpha`**，不能改成别的名字。
-
-## 与 Proguard 的关系
-
-启用 Proguard 时，`finalizeArtifacts` 要额外把混淆产物拷成最终包（混淆产物输出在 `libs/obfuscate/`）。此时以 [build.md](build.md) 的 Proguard 段为准，那一段给出了合并后的写法；版本号拼接部分不变。
-
-## 完成前检查
-
-- `mod_version` 是否只含版本号，没有把 MC 版本写进去？
-- `build` 后是否有点（`+build.2` 而非 `+build2`）？
-- 包内 `mods.toml` 的 version 是否恒带 `+build.<编号>`？
-- 普通 `build` 的 jar 名是否**不带**构建数？`buildAlpha` 的是否**带**？
-- `buildAlpha` 产物的包内编号是否与其后 `gradle.properties` 里的编号**完全一致**？
-- 跑过 `build` 后编号是否**没有**变化？
-- 构建编号是否在内存里算好后使用，而不是先改 `gradle.properties` 再构建？
-- `finalizeArtifacts` 是否挂到了 `build` 上（而非只在混淆时挂）？
+- 检查最终 jar 文件名与包内版本，确认 modid 只作文件名前缀，MC 版本没有重复。
+- 连续执行普通 `build`，确认编号不变，最终包仍可生成。
+- 执行 `buildAlpha`，确认产物编号等于构建后属性；失败路径不得提前消耗编号。
+- 对 Forge / NeoForge 分别验证元数据展开和整理任务，不能仅凭一种模板通过就推断另一种通过。

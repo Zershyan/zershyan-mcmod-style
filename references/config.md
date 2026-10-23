@@ -1,80 +1,53 @@
 # 配置
 
-## 位置
+## 位置与类型
 
-`config/` 作为 registry 子包：
+注册入口为 `registry/<ModId>Configs.java`，配置定义放 `registry/config/`：
 
-```
+```text
 registry/
-├── <ModId>Configs.java       doRegister(ModContainer)
+├── <ModId>Configs.java
 └── config/
     ├── ClientConfig.java
     ├── CommonConfig.java
     └── ServerConfig.java
 ```
 
-## 配置类写法
+按 CLIENT / COMMON / SERVER 分文件，每类维护独立 SPEC；只注册需要的配置类型。Forge 模板保留这三类，不因示例开关额外添加 Startup 配置。
 
-按 `ModConfig.Type` 分文件，每类一个类。内部用 static 块构建 `ModConfigSpec`：
+## 配置项
+
+- 配置键使用 `lower_snake_case`，不要为整理措辞修改已发布配置键。
+- 在静态初始化中构造 Builder、配置值与 SPEC；`comment(...)` 使用简明中文。
+- 显示名登记到 ConfigLang，通过 `.translation(langEntry.key())` 关联；语言条目名称与 `define(...)` 的键大小写完全一致。见 [Datagen](datagen.md)。
+
+## NeoForge 1.21.1
+
+使用 `ModConfigSpec` 和 `ModContainer.registerConfig(...)`。入口为 `doRegister(ModContainer)`，在内部区分公共配置与客户端配置，而不是让调用者漏掉客户端注册。
 
 ```java
-public class ClientConfig {
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
-    public static final ModConfigSpec SPEC;
-    public static final ModConfigSpec.BooleanValue HIGHEST_TOOLTIP_EVENT;
-
-    static {
-        HIGHEST_TOOLTIP_EVENT = BUILDER.comment("是否采用至高优先级tooltip事件")
-                .define("highest_tooltip_event", false);
-
-        SPEC = BUILDER.build();
-    }
+public static void doRegister(ModContainer container) {
+    if (FMLLoader.getDist().isClient()) registerClient(container);
+    registerCommon(container);
 }
 ```
 
-- 配置项键名用 `lower_snake_case`。
-- `comment(...)` 用中文，与注释规范一致（见 [naming-and-layout.md](naming-and-layout.md)）。
+- `registerCommon` 注册 COMMON、SERVER。
+- `registerClient` 注册 CLIENT，并通过 `container.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new)` 接入配置界面。
+- 客户端专属类的访问仍须保持端侧隔离，不在通用静态初始化中执行客户端逻辑。
 
-## 注册
-
-`registry/<ModId>Configs.java`，入口 `doRegister(ModContainer)`，按类型分别注册：
-
-```java
-public final class <ModId>Configs {
-    public static void doRegister(ModContainer container) {
-        container.registerConfig(ModConfig.Type.COMMON, CommonConfig.SPEC);
-        container.registerConfig(ModConfig.Type.SERVER, ServerConfig.SPEC);
-    }
-
-    public static void registerClient(ModContainer container) {
-        container.registerConfig(ModConfig.Type.CLIENT, ClientConfig.SPEC);
-    }
-}
-```
-
-客户端配置的注册调用要放在分端判断内（NeoForge 用 `dist.isClient()`，Forge 用 `DistExecutor`），避免服务端加载客户端配置类。
-
-## 配置界面
-
-**NeoForge 1.21.1** 的客户端配置项需同时注册配置界面工厂，使配置界面可用：
-
-```java
-modContainer.registerExtensionPoint(IConfigScreenFactory.class, ConfigurationScreen::new);
-```
+完整实现：[NeoForge 配置入口](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/registry/ExampleModConfigs.java)。
 
 ## Forge 1.20.1
 
-- 保留 `ClientConfig`、`CommonConfig`、`ServerConfig` 三类，使用 `ForgeConfigSpec`，不增加 Startup 配置。
-- `<ModId>Configs.doRegister()` 内通过 `ModLoadingContext.get().registerConfig(...)` 注册；客户端配置先检查物理客户端，可用 `FMLLoader.getDist().isClient()`。
-- **不注册配置界面**，不移植 NeoForge 的 `IConfigScreenFactory` 或 `ConfigurationScreen`，也不额外添加界面依赖。
-- `define(...)` 的键与 `ConfigLangEntry` 的名称保持一致，通过 `.translation(langEntry.key())` 关联。
+- 使用 `ForgeConfigSpec`，入口为 `doRegister()`。
+- 经 `ModLoadingContext.get().registerConfig(...)` 注册；客户端配置先检查物理客户端，如 `FMLLoader.getDist().isClient()`。
+- 不移植 NeoForge 的配置界面工厂，不擅自添加额外界面依赖。
 
-## 配置项的语言
-
-配置项的显示名走 datagen 语言流程，见 [datagen.md](datagen.md)。
+完整实现：[Forge 配置入口](../templates/forge1.20.1/src/main/java/io/zershyan/examplemod/registry/ExampleModConfigs.java)。
 
 ## 完成前检查
 
-- 配置类型（COMMON / CLIENT / SERVER）是否与该配置的生效范围一致？
-- 客户端配置是否只在客户端注册？
-- 配置键名是否稳定（改名会导致用户配置丢失）？
+- 配置类型与实际生效范围一致，CLIENT 配置仅在客户端注册？
+- 显示名和注释已登记，语言键与配置键一致？
+- 已发布的键名、默认值或约束若有变化，是否明确兼容影响？

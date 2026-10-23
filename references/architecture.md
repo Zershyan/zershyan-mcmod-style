@@ -4,9 +4,9 @@
 
 **按加载器分代，两种写法不可混用。**
 
-### NeoForge（1.21.x 及以后）
+### NeoForge 1.21.1
 
-构造器直接收 `Dist` 参数，用它判断分端。`Dist` 是 NeoForge 特有的。
+该版本模板通过构造器注入 `IEventBus`、`Dist`、`ModContainer`，以 `dist.isClient()` 判断物理端。这是构造器接入方式的差异，不是说 Forge 没有 Dist 类型；其他 NeoForge 版本先核实注入接口。
 
 ```java
 @Mod(<ModId>.MODID)
@@ -37,7 +37,7 @@ public class <ModId> {
 
 ### Forge（1.20.1）
 
-构造器**没有** `Dist` 参数，用 `DistExecutor.unsafeRunWhenOn` 隔离客户端。
+Forge 47.3.4 模板使用无参入口，通过 `FMLJavaModLoadingContext` 获取 mod 总线，用 `DistExecutor.unsafeRunWhenOn` 隔离客户端；不要照搬 NeoForge 构造器注入。
 
 ```java
 @Mod(<ModId>.MODID)
@@ -53,8 +53,8 @@ public class <ModId> {
         <ModId>Commands.doRegister(forgeBus, modBus);
 
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            <ModId>ClientSetup.doRegister(modBus);
             <ModId>Overlays.doRegister(modBus);
+            <ModId>KeyMappings.doRegister(modBus);
         });
     }
 }
