@@ -6,7 +6,7 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 
 /**
- * 对外 API。其他包不得依赖本包；本包只单向调用内部逻辑。
+ * 本体 API，任意包可直接调用，本包也可调用内部逻辑。
  */
 public class ExampleModApi {
     public static final String MODID = ExampleMod.MODID;

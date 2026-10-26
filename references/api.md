@@ -6,11 +6,14 @@
 
 ## 位置与命名
 
-`api/<ModId>Api.java`，命名用 `Api`（不是 `API`），与主类名前缀一致。
+| 类型 | 位置 | 命名 |
+|---|---|---|
+| 本体 API | `api/<ModId>Api.java` | 用 `Api`（不是 `API`），与主类名前缀一致 |
+| 兼容 API | `compat/<被兼容modid>/api/<Dep>Api.java` | 同上；属于兼容，**不计入本体 API** |
 
 ## 分层
 
-**按需分层**：简单 mod 只一个 `XxxApi.java`，复杂 mod 才建 `helper/` 与 `events/` 子包。
+**按需分层**：简单 mod 只一个 `XxxApi.java`，复杂 mod 才建 `helper/` 与 `events/` 子包。兼容 API 不放在 `api/` 下，跟随其 compat 子包。
 
 ```
 // 简单
@@ -20,22 +23,30 @@ api/<ModId>Api.java
 api/
 ├── <ModId>Api.java
 ├── helper/
-│   ├── <Feature>Helper.java
 │   └── <Feature>Helper.java
 └── events/
     └── <Feature>Event.java
+
+// 兼容 API
+compat/<被兼容modid>/api/<Dep>Api.java
 ```
 
-## 依赖方向（硬性）
+## 调用规则
 
-- **本模组内部其他包不得依赖 `api` 包**；外部模组通过 API 调用不在此禁令内。
-- API 门面调用内部领域实现；内部代码复用该实现，不反向绕回 API。
-- `api` 内容需**尽量少依赖其他包**，因为它是对外的稳定面。
+本体 API 指 `api/`，兼容 API 指 `compat/<被兼容modid>/api/`。仅下列映射成立，其余调用一律不允许。
 
-```
-允许：  api → handler / registry / util
-禁止：  handler / registry / util → api
-```
+| 调用方 | 仅可调用 |
+|---|---|
+| 本体 API（`api/`） | 任意本体内容、compat（软调用） |
+| 本体内部（`api/` 以外的本体包） | 任意本体内容、compat（软调用） |
+| `compat/<modid>/api/` | 本体 API、本 compat 的 `api/` 与实现 |
+| `compat/<modid>/` 实现 | 本体 API、本 compat 的 `api/` 与实现 |
+
+- **本体内自由**：本体 API 与本体内部包可互相调用，不要求单向。
+- **本体调用 compat 必须软调用**：本体可以引用并调用 compat 类，但本体侧的类型声明、父类、注解与静态初始化中不得出现第三方可选依赖类型；对应 mod 缺失时只降级，不抛异常、不崩溃。装配统一走 `CompatFactory`，见 [兼容](compat.md)。
+- **compat 只用本体 API 和自己**：`compat/<modid>/` 只用本体 API 与本子包内的 api、实现，不引用本体内部包，也不跨 compat 调用。compat 根的 `ICompatUtils` 与工厂属基础设施，不在此限。未建 `api/` 的项目，compat 只用本子包与加载器 API 自足实现。
+- `api` 仍是对外稳定面，**尽量少依赖其他包**；内部调用方再多也不改变它的签名契约。
+- 内部调用 API 时注意类初始化顺序：`api` 的 `static` 常量不要引用一个初始化时会回调 `api` 的内部类，否则可能触发初始化循环。
 
 ## 写法
 
@@ -80,7 +91,9 @@ public static float clientGetPartialTick() {
 
 ## 完成前检查
 
-- api 是否被其他包反向依赖？
 - api 是否引入了不必要的内部依赖？
+- 兼容 API 是否都在 `compat/<被兼容modid>/api/`，未混入本体 `api/`？
+- 本体对 compat 的调用是否为软调用：本体侧无第三方可选依赖类型，缺失依赖时能降级？
 - 客户端方法是否标注了 `@OnlyIn(Dist.CLIENT)`？
-- 公开方法签名是否稳定（改签名会破坏下游 mod）？
+- `api` 与内部之间是否存在静态初始化循环？
+- 公开方法签名是否稳定（改签名会同时破坏下游 mod 和内部调用方）？

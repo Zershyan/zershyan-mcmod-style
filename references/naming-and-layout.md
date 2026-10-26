@@ -9,7 +9,7 @@ io/zershyan/<modid>/
 ├── <ModId>.java        主类
 ├── api/                对外门面（按需创建，创建前须问用户）
 ├── client/             顶层客户端包
-├── compat/             第三方模组兼容（按被兼容 modid 分子包）
+├── compat/             第三方模组兼容（按被兼容 modid 分子包，子包 api/ 为兼容 API）
 ├── datagen/
 │   ├── lang/           语言数据源
 │   ├── provider/       Provider
@@ -50,6 +50,7 @@ io/zershyan/<modid>/
 | 不使用事件的领域逻辑、客户端状态或界面 | 所属功能包，如 `client/` |
 | 纯工具方法 | `util/` |
 | 对外暴露的稳定能力 | `api/` |
+| 兼容专属的对外能力 | `compat/<被兼容modid>/api/` |
 | 第三方模组兼容 | `compat/<被兼容modid>/` |
 | 数据生成源与 Provider | `datagen/{lang,provider,util}/` |
 

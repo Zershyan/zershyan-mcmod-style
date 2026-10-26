@@ -14,7 +14,7 @@
 |---|---|---|---|
 | 工程 | 包结构、类名、`util`、`Handler` | [包结构与命名](naming-and-layout.md) | [注册](registry.md) |
 | 工程 | `@Mod`、构造器、Dist、双端隔离 | [主类与双端](architecture.md) | [配置](config.md)、[Mixin](mixin.md) |
-| 工程 | 对外门面、`Api`、helper、API 依赖方向 | [对外 API](api.md) | [兼容](compat.md) |
+| 工程 | 对外门面、`Api`、helper、兼容 API、调用关系 | [对外 API](api.md) | [兼容](compat.md) |
 | 工程 | `LOGGER`、`id()`、ResourceLocation、工具类 | [日志与工具](logging-and-util.md) | [包结构](naming-and-layout.md) |
 | 注册与逻辑 | 注册项、`doRegister`、registry、自定义注册表 | [注册](registry.md) | [包结构](naming-and-layout.md) |
 | 注册与逻辑 | 命令、子命令、权限、反馈消息 | [命令](commands.md) | [注册](registry.md)、[Datagen](datagen.md) |

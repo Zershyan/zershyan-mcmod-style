@@ -18,10 +18,10 @@ description: 为 Zershyan 的 Minecraft 模组工程提供包结构、注册入�
 
 - **注册**：注册入口、注册项及注册时必需的数据归 `registry/`，入口统一 `doRegister`；事件驱动的注册也不例外。见 [注册](references/registry.md)。
 - **分包与命名**：按功能分包，端侧按需嵌套；工具包用 `util/`。使用非注册事件的类以 `Handler` 结尾，普通领域逻辑不强行归入 handler。见 [包结构](references/naming-and-layout.md)。
-- **API 依赖方向**：模组内部其他包不依赖 `api/`；API 门面调用内部实现，不能反向调用。见 [对外 API](references/api.md)。
+- **API 调用**：任意包可调用本体 API（`api/`）；兼容 API 在 `compat/<modid>/api/`，只对本 compat 可见；本体调用 compat 一律按软调用处理。见 [对外 API](references/api.md)。
 - **资源**：可生成的资源必须走 Datagen，修改声明源或 Provider，不直接改生成结果。见 [Datagen](references/datagen.md)。
 - **版本与产物**：`mod_version` 只含模组版本；包内版本恒含 MC 版本与 `+build.N`。普通 `build` 沿用编号，发布 jar 名不带编号；`buildAlpha` 使用下一编号，成功后回写。见 [版本号](references/versioning.md)。
-- **可选兼容**：第三方可选依赖的调用收在 `compat/`，经 `testLoadedAndRun` / `testLoadedAndCall` 检查，并隔离实际 API 引用；缺少依赖仍须能启动。见 [兼容](references/compat.md)。
+- **可选兼容**：第三方可选依赖的调用收在 `compat/`，经 `testLoadedAndRun` / `testLoadedAndCall` 检查，并隔离实际 API 引用；缺少依赖仍须能启动。本体可调用 compat，但须软调用（本体侧不出现第三方可选依赖类型，缺失依赖不崩溃）；各 compat 子包互不引用。见 [兼容](references/compat.md)。
 - **ForgeAttachment 按需引入**：不用附件就不添加依赖；使用后声明为必需依赖，主动告知用户用途、安装要求与 GitHub / MC百科 / CurseForge 项目链接或未发布状态。仓库、坐标和链接统一维护在 [ForgeAttachment](references/forgeattachment.md)。Forge 1.20.1 的 ItemStack 数据用 NBT，不建立 DataComponents。
 - **不擅自扩展工具链**：未经用户要求不启用混淆，不引入本 skill 未列出的依赖或工具。
 

@@ -10,13 +10,16 @@ compat/
 ├── <ModId>CompatFactory.java
 └── <被兼容modid>/
     ├── <Dep>Compat.java
+    ├── api/                 兼容 API，不是本体 API
     ├── event/
     ├── registry/
     └── util/
 ```
 
-- 每个依赖按其 modid 建子包；兼容实现 `implements ICompatUtils`。
-- 兼容子包可包含自己的 `api/`、`event/`、`registry/`、`util/`，工具包仍用单数。依赖独有的注册内容不散落到主模组的 `registry/`。
+- 每个依赖按其 modid 建子包；兼容实现 `implements ICompatUtils`。compat 根只放 `ICompatUtils` 与 `<ModId>CompatFactory`，供各子包实现与主类装配。
+- 兼容子包含 `api/`、`event/`、`registry/`、`util/`，工具包仍用单数。依赖独有的注册内容不散落到主模组的 `registry/`。
+- 各 compat 子包互相独立：只引用本体 API 与本子包内的类（含本子包 `api/`），不引用其他 compat 的任何类。
+- 本体可在任意处调用 compat，但必须是软调用：本体侧不出现第三方可选依赖类型；compat 入口类也要保持可安全链接，对应 mod 缺失时只降级，不崩溃。
 - 第三方 API 引用集中在依赖专属实现中；通用入口避免在字段类型、方法签名、父类和静态初始化中提前链接可选类。
 - 兼容 Mixin 的加载条件与包结构见 [Mixin](mixin.md)。
 
@@ -69,11 +72,11 @@ compat/
 
 通用调用点委托给依赖专属实现；由该实现把实际第三方调用包在 `testLoadedAndRun` 中。不要为了展示检查方法而把第三方类型直接写进通用调用点。
 
-返回值调用使用 `testLoadedAndCall` 并提供明确默认值。需要供其他模组调用的能力，由 `api/` 转发到 compat；compat 不反向依赖本模组 API，见 [对外 API](api.md)。
+返回值调用使用 `testLoadedAndCall` 并提供明确默认值。需要供其他模组调用的能力写在本子包的 `api/`；compat 只用本体 API 与本子包内的类，不跨 compat 调用，也不直接调用本体其余内部包。完整调用关系见 [对外 API](api.md)。
 
 ## 完成前检查
 
 - 第三方类型是否只在依赖专属代码中出现，调用是否经过检查入口？
 - 兼容事件是否挂对总线，网络注册是否接入工厂？
 - 依赖存在时功能是否可用；**实际移除可选依赖后**，客户端与专用服务器是否仍能启动？
-- 兼容子包、注册入口与 API 依赖方向是否符合项目约定？
+- 是否存在跨 compat 引用，或本体对 compat 的调用未做软调用（类型泄漏、缺失依赖会崩溃）？
