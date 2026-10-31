@@ -12,7 +12,7 @@ public class ServerConfig {
     static {
         MAX_VALUE = BUILDER.comment("示例数值上限")
                 .translation(ExampleModConfigLang.MaxValue.key())
-                .defineInRange("max_value", 100, 0, 10000);
+                .defineInRange(ExampleModConfigLang.MaxValue.name(), 100, 0, 10000);
 
         SPEC = BUILDER.build();
     }

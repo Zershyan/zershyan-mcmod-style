@@ -12,7 +12,7 @@ public class ClientConfig {
     static {
         SHOW_OVERLAY = BUILDER.comment("是否显示示例 HUD 叠层")
                 .translation(ExampleModConfigLang.ShowOverlay.key())
-                .define("show_overlay", true);
+                .define(ExampleModConfigLang.ShowOverlay.name(), true);
 
         SPEC = BUILDER.build();
     }

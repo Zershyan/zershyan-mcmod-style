@@ -1,5 +1,6 @@
 package io.zershyan.examplemod.registry.config;
 
+import io.zershyan.examplemod.datagen.lang.ExampleModConfigLang;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class ClientConfig {
@@ -10,7 +11,7 @@ public class ClientConfig {
 
     static {
         SHOW_OVERLAY = BUILDER.comment("是否显示示例 HUD 叠层")
-                .define("show_overlay", true);
+                .define(ExampleModConfigLang.ShowOverlay.name(), true);
 
         SPEC = BUILDER.build();
     }

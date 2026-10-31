@@ -1,5 +1,6 @@
 package io.zershyan.examplemod.registry.config;
 
+import io.zershyan.examplemod.datagen.lang.ExampleModConfigLang;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class ServerConfig {
@@ -10,7 +11,7 @@ public class ServerConfig {
 
     static {
         MAX_VALUE = BUILDER.comment("示例数值上限")
-                .defineInRange("max_value", 100, 0, 10000);
+                .defineInRange(ExampleModConfigLang.MaxValue.name(), 100, 0, 10000);
 
         SPEC = BUILDER.build();
     }

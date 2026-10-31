@@ -44,7 +44,7 @@ datagen/
 |---|---|
 | `<ModId>Lang` | 基类，定义 Entry、FinalEntry、双语 Lang，并聚合所有语言来源 |
 | `<ModId>KeyLang` | 命令、错误、提示、说明、消息、按键等通用文本 |
-| `<ModId>ConfigLang` | 配置分类和配置项名称 |
+| `<ModId>ConfigLang` | 配置项路径与显示名 |
 | `<ModId>RegistryLang` | 物品、方块、声音、属性、自定义注册项等对象的语言 |
 
 基类保留 `stringEntry`、`addEntry`、`addFinalEntry`、`getAllLang()` 和两种 `init` 钩子：无参 `init()` 登记本类条目，`init(entries)` 合并已有列表。新增语言子类时，把它加入 `getAllLang()` 的聚合列表，不能只建类而不接入。
@@ -67,7 +67,7 @@ datagen/
 
 ### 配置语言
 
-`ConfigLangEntry` 统一生成 `<modid>.configuration.<name>`。登记时的 `name` 必须与配置类 `define(...)` 的键完全一致，包括大小写，并用 `.translation(langEntry.key())` 关联。
+`ConfigLangEntry` 的 `name` 就是配置项 path，统一生成 `<modid>.configuration.<name>`。配置类用 `define(ExampleModConfigLang.EnableFeature.name(), ...)` 取路径，不写字符串字面量；`name` 用 `lower_snake_case`，与已发布的配置键保持一致。
 
 实现：[配置语言声明](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/datagen/lang/ExampleModConfigLang.java)、[ConfigLangEntry](../templates/neoforge1.21.1/src/main/java/io/zershyan/examplemod/datagen/util/ConfigLangEntry.java)。
 
@@ -120,6 +120,6 @@ Forge 1.20.1 使用 Java 17：类型分发用 `instanceof`，不复制 Java 21 �
 
 - 改动来自声明源或 Provider，生成文件由 `runData` 更新？
 - 新语言来源已接入聚合，双语键与占位符一致？
-- 配置语言的 name 与实际配置键相同，标签与掉落仅涉及预期注册项？
+- 配置语言的 `name` 就是配置 path，配置类未硬编码字符串；标签与掉落仅涉及预期注册项？
 - Provider 只在需要时注册，音频与纹理引用存在，可选依赖缺失时不会被加载？
 - 生成资源已纳入最终 jar，而非只存在于源码目录？

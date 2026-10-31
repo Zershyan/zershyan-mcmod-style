@@ -12,7 +12,7 @@ public class CommonConfig {
     static {
         ENABLE_FEATURE = BUILDER.comment("是否启用示例功能")
                 .translation(ExampleModConfigLang.EnableFeature.key())
-                .define("enable_feature", true);
+                .define(ExampleModConfigLang.EnableFeature.name(), true);
 
         SPEC = BUILDER.build();
     }

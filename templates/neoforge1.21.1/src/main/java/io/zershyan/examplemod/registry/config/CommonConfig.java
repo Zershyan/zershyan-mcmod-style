@@ -1,5 +1,6 @@
 package io.zershyan.examplemod.registry.config;
 
+import io.zershyan.examplemod.datagen.lang.ExampleModConfigLang;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 public class CommonConfig {
@@ -10,7 +11,7 @@ public class CommonConfig {
 
     static {
         ENABLE_FEATURE = BUILDER.comment("是否启用示例功能")
-                .define("enable_feature", true);
+                .define(ExampleModConfigLang.EnableFeature.name(), true);
 
         SPEC = BUILDER.build();
     }

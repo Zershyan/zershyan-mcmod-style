@@ -18,8 +18,9 @@ registry/
 ## 配置项
 
 - 配置键使用 `lower_snake_case`，不要为整理措辞修改已发布配置键。
+- **路径不写字符串字面量**：`define`、`defineInRange` 等一律取 `ConfigLangEntry.name()`，如 `define(ExampleModConfigLang.EnableFeature.name(), true)`；`name` 即配置键，路径与语言条目不会漂移。
 - 在静态初始化中构造 Builder、配置值与 SPEC；`comment(...)` 使用简明中文。
-- 显示名登记到 ConfigLang，通过 `.translation(langEntry.key())` 关联；语言条目名称与 `define(...)` 的键大小写完全一致。见 [Datagen](datagen.md)。
+- 显示名由 ConfigLang 提供：Forge 经 `.translation(langEntry.key())` 显式关联，NeoForge 使用默认 `<modid>.configuration.<path>` 键。见 [Datagen](datagen.md)。
 
 ## NeoForge 1.21.1
 
@@ -49,5 +50,6 @@ public static void doRegister(ModContainer container) {
 ## 完成前检查
 
 - 配置类型与实际生效范围一致，CLIENT 配置仅在客户端注册？
+- 配置 path 是否取自 `ConfigLangEntry.name()`，没有硬编码字符串？
 - 显示名和注释已登记，语言键与配置键一致？
 - 已发布的键名、默认值或约束若有变化，是否明确兼容影响？
