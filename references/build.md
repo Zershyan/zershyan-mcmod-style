@@ -100,7 +100,7 @@ tasks.named('jar', Jar).configure {
 ./gradlew jar
 ```
 
-构建逻辑或资源处理有变化时，还应执行对应的 `build` / `buildAlpha`，检查产物而不只看任务退出码：
+构建逻辑或资源处理有变化时，还应执行对应的构建任务（默认 `buildAlpha`，选择规则见 [版本号约定](versioning.md)），检查产物而不只看任务退出码：
 
 - Java、MC、加载器与映射匹配；依赖可解析，版本明确。
 - Datagen 资源正确入包，没有缓存目录、未展开的元数据占位符或缺失的 Mixin 文件。

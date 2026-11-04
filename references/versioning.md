@@ -48,6 +48,11 @@ mod_build_number=0
 | `build` | `+build.1` | `1` |
 | `buildAlpha` | `+build.2` | `2` |
 
+默认选择按以下顺序判断：
+
+- **构建任务**：用户明确要求普通 `build`，或工程已有沿用编号的先例时用 `build`；否则一律用 `buildAlpha`。
+- **历史产物**：用户明确要求清理，或工程已有清理先例时才删除旧 jar；否则保留已有构建版本，不主动清空 `build/libs`。
+
 ## 实现要求
 
 ```groovy
