@@ -18,7 +18,7 @@
 
 两套模板包含 wrapper、运行配置、常见注册类型、Datagen 和占位资源；modid 均为 `examplemod`。优先复制对应模板，再裁剪，不凭记忆重写整套构建脚本。
 
-1. 替换 `io.zershyan.examplemod`、类名前缀 `ExampleMod`、`mod_id` 与资源命名空间，同时修改 Mixin 配置和引用。
+1. 替换 `io.zershyan.examplemod`、类名前缀 `ExampleMod*`（modid 过长时换用缩写，主类与包名仍用完整 modid）、`mod_id` 与资源命名空间，同时修改 Mixin 配置和引用。
 2. 填写名称、版本、作者、许可证与说明。`mod_license`、`mod_description` 必须明确；模板计算所需的 MC / 加载器 / 映射 / 版本属性也不能删除。`mod_credits`、`mod_url` 按需填写。
 3. 移除不用的注册项、演示功能与依赖；用户不需要 API 时移除模板中的 API 门面。不因模板包含某功能就让新模组依赖它。
 4. 重新生成资源并核对命名空间、资源引用和元数据；占位贴图生成器仅用于模板，不能替代正式素材。

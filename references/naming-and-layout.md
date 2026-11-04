@@ -36,6 +36,7 @@ io/zershyan/<modid>/
 ## 前缀规范
 
 - **注册类**：启用混淆的项目用 `Mod*`（`ModItems`、`ModSounds`）；未启用混淆的用 `<ModId>*`（`ExampleModItems`、`DSItems`）。
+- **前缀可缩写，主类与包名除外**：modid 过长时，其他类的前缀可按单词取稳定缩写（如 `AbcdefghijkLmnopqrstuvWxyz` → `ALW`，得 `ALWItems`），可整体大写，同一工程内统一，`DSItems` 即此例；**主类与包名不许缩写**，须用完整 modid（`AbcdefghijkLmnopqrstuvWxyz.java`、`io/zershyan/abcdefghijklmnopqrstuvwxyz/`）。
 - **Handler 类**：以 `Handler` 结尾，如 `KeyPressHandler`、`UntieLivingHandler`。
 - **Provider 类**：通用 Provider 用 `Mod*Provider`，如 `ModLangProvider`、`ModSoundProvider`；包元数据保留 `PackMetadataProvider`。
 - **Mixin 类**：`Mixin + 目标类名`，见 [mixin.md](mixin.md)。

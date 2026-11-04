@@ -17,7 +17,7 @@ description: 为 Zershyan 的 Minecraft 模组工程提供包结构、注册入�
 ## 核心约定
 
 - **注册**：注册入口、注册项及注册时必需的数据归 `registry/`，入口统一 `doRegister`；事件驱动的注册也不例外。见 [注册](references/registry.md)。
-- **分包与命名**：按功能分包，端侧按需嵌套；工具包用 `util/`。使用非注册事件的类以 `Handler` 结尾，普通领域逻辑不强行归入 handler。见 [包结构](references/naming-and-layout.md)。
+- **分包与命名**：按功能分包，端侧按需嵌套；工具包用 `util/`。除主类与包名必须用完整 modid 外，类名前缀在 modid 过长时可取稳定缩写。使用非注册事件的类以 `Handler` 结尾，普通领域逻辑不强行归入 handler。见 [包结构](references/naming-and-layout.md)。
 - **API 调用**：任意包可调用本体 API（`api/`）；兼容 API 在 `compat/<modid>/api/`，只对本 compat 可见；本体调用 compat 一律按软调用处理。见 [对外 API](references/api.md)。
 - **资源**：可生成的资源必须走 Datagen，修改声明源或 Provider，不直接改生成结果。见 [Datagen](references/datagen.md)。
 - **版本与产物**：`mod_version` 只含模组版本；包内版本恒含 MC 版本与 `+build.N`。默认走 `buildAlpha`（取下一编号、成功后回写），`build` 沿用编号且仅在用户明确要求或已有先例时使用；旧构建产物不主动清理。见 [版本号](references/versioning.md)。
