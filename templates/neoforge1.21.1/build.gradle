@@ -27,6 +27,7 @@ sourceSets.main.resources {
 
 repositories {
     mavenLocal()
+    // 本地 jar 依赖：libs/<name>-<version>.jar，坐标写 blank:<name>:<version>
     flatDir {
         dir 'libs'
     }

@@ -16,16 +16,16 @@
 |---|---|
 | GitHub | [Zershyan/forgeattachment](https://github.com/Zershyan/forgeattachment) |
 | MC百科（mcmod） | 暂未发布；发布后补充真实项目页 |
-| CurseForge | 暂未发布；发布后补充真实项目页 |
+| CurseForge | 按实际发布状态提供项目链接；未发布时如实说明，并请用户手动提供 jar |
 
 未发布状态来自用户提供的信息，后续接入时核实并更新。无法确认时如实说明；不编造项目页，也不把平台首页当项目链接。不能只静默修改构建脚本。
 
 ## 仓库、版本与元数据
 
-**接入前先探测 sigh Maven 上的可用版本**，固定具体版本后再添加以下配置。示例版本只是已保存基线，不等于最新；探测失败如实说明，不擅自改用镜像或本地 jar。
+**接入前先探测 sigh Maven 上的最新正式版**：读 `https://maven.sighs.cc/repository/maven-public/io/zershyan/forgeattachment/maven-metadata.xml`，取 `<release>` 作为最新正式版；它不匹配目标 MC 版本时，再从 `<versions>` 里筛掉带 `+build.<编号>` 的开发版，取匹配版本的最新一条。
 
 ```properties
-forgeattachment_version=0.0.1-1.20.1+build.0
+forgeattachment_version=0.0.1-1.20.1
 ```
 
 ```groovy
@@ -41,9 +41,9 @@ dependencies {
 }
 ```
 
-完整坐标为 `io.zershyan:forgeattachment:0.0.1-1.20.1+build.0`。变量必须固定具体版本，不用 `+`、范围或 `latest.release`；`+build.0` 是版本号组成部分，不是动态通配符。
+变量必须固定具体版本，不用 `+`、范围或 `latest.release`；`+build.<编号>` 是开发版后缀，对外接入优先取正式版。
 
-探测版本读 `https://maven.sighs.cc/repository/maven-public/io/zershyan/forgeattachment/maven-metadata.xml` 的版本列表，取与目标 MC 版本匹配的最新一条。
+**拿不到可用正式版时不要自行降级或换镜像**：把 ForgeAttachment 的 CurseForge 项目链接发给用户，请其手动下载 jar 并发到会话，再按 [依赖声明](build.md) 的本地 jar 方式（放 `libs/`，坐标 `blank:<name>:<version>`）接入，并说明这是绕行方案。
 
 在 Forge 的 `META-INF/mods.toml` 同时声明，不能替换成 NeoForge 的 `type="required"`：
 

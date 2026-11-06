@@ -20,9 +20,11 @@ description: 为 Zershyan 的 Minecraft 模组工程提供包结构、注册入�
 - **分包与命名**：按功能分包，端侧按需嵌套；工具包用 `util/`。除主类与包名必须用完整 modid 外，类名前缀在 modid 过长时可取稳定缩写。使用非注册事件的类以 `Handler` 结尾，普通领域逻辑不强行归入 handler。见 [包结构](references/naming-and-layout.md)。
 - **API 调用**：任意包可调用本体 API（`api/`）；兼容 API 在 `compat/<modid>/api/`，只对本 compat 可见；本体调用 compat 一律按软调用处理。见 [对外 API](references/api.md)。
 - **资源**：可生成的资源必须走 Datagen，修改声明源或 Provider，不直接改生成结果。见 [Datagen](references/datagen.md)。
-- **版本与产物**：`mod_version` 只含模组版本；包内版本恒含 MC 版本与 `+build.N`，对外发布用不带编号的正式版本号。默认走 `buildAlpha`（取下一编号、成功后回写），`build` 沿用编号且仅在用户明确要求或已有先例时使用；旧构建产物不主动清理。见 [版本号](references/versioning.md)。
+- **版本与产物**：`mod_version` 只含模组版本；包内版本恒含 MC 版本与 `+build.N`，对外发布用不带编号的正式版本号；旧构建产物不主动清理。见 [版本号](references/versioning.md)。
+- **构建请求**：用户要求构建时，先异步提问是否需要正式版（不阻塞），同时直接执行 `buildAlpha`；用户确认需要正式版后再执行 `build`。见 [构建与发布](references/build.md)。
 - **可选兼容**：第三方可选依赖的调用收在 `compat/`，经 `testLoadedAndRun` / `testLoadedAndCall` 检查，并隔离实际 API 引用；缺少依赖仍须能启动。本体可调用 compat，但须软调用（本体侧不出现第三方可选依赖类型，缺失依赖不崩溃）；各 compat 子包互不引用。见 [兼容](references/compat.md)。
-- **ForgeAttachment 优先采用**：Forge 模组需要玩家持久化数据时，先探测 sigh Maven 上的可用版本，固定后优先使用 ForgeAttachment，不另造 Capability 或 NBT 方案；使用后声明为必需依赖，主动告知用户用途、安装要求与 GitHub / MC百科 / CurseForge 项目链接或未发布状态。仓库、坐标和链接统一维护在 [ForgeAttachment](references/forgeattachment.md)。Forge 1.20.1 的 ItemStack 数据用 NBT，不建立 DataComponents。
+- **ForgeAttachment 优先采用**：Forge 模组需要玩家持久化数据时，先探测 sigh Maven 上的最新正式版并固定；拿不到可用正式版就把 CurseForge 链接发给用户，请其手动提供 jar。优先使用 ForgeAttachment，不另造 Capability 或 NBT 方案；使用后声明为必需依赖，主动告知用户用途、安装要求与 GitHub / MC百科 / CurseForge 项目链接或未发布状态。仓库、坐标和链接统一维护在 [ForgeAttachment](references/forgeattachment.md)。Forge 1.20.1 的 ItemStack 数据用 NBT，不建立 DataComponents。
+- **依赖声明**：必需依赖除构建脚本外，还要写进 `mods.toml` / `neoforge.mods.toml` 的 `[[dependencies]]`；可选依赖不声明，走 `compat/`。见 [构建与发布](references/build.md)。
 - **不擅自扩展工具链**：未经用户要求不启用混淆，不引入本 skill 未列出的依赖或工具。
 
 ## 需要用户决定

@@ -28,6 +28,7 @@ base {
 
 repositories {
     mavenLocal()
+    // 本地 jar 依赖：libs/<name>-<version>.jar，坐标写 blank:<name>:<version>，外层包 fg.deobf
     flatDir {
         dir 'libs'
     }

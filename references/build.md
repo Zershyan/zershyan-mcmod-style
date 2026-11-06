@@ -27,7 +27,7 @@
 
 Forge 模板实际使用附件演示，因此保留 forgeattachment。**需要玩家持久化数据的新模组应保留并使用它**；确实不需要附件时再裁剪。
 
-- 需要玩家持久化数据时：先按 [ForgeAttachment](forgeattachment.md) 探测 sigh Maven 上的可用版本并固定，保留注册、数据类与元数据，主动告知用户安装要求和项目链接。
+- 需要玩家持久化数据时：先按 [ForgeAttachment](forgeattachment.md) 探测 sigh Maven 上的最新正式版并固定；拿不到可用正式版就把 CurseForge 项目链接发给用户，请其手动提供 jar 后按本地 jar 依赖接入。
 - 不需要附件时：先移除或改写附件注册、数据类、事件处理及网络包中的附件调用，再移除 `modImplementation`、`forgeattachment_version` 和 `mods.toml` 中对应依赖。仅为其服务的 Maven 仓库配置一并移除，共享仓库按其他依赖需求保留。
 
 **不使用附件的模组不得照搬此依赖。** 不要仅删除依赖而留下无法编译的 API 引用。
@@ -70,6 +70,23 @@ tasks.named('jar', Jar).configure {
 
 版本随目标环境核实；此处处理器版本对应现有 Forge 模板。不能只验证开发运行时的 `--mixin.config`，还要检查最终 jar 内的 manifest、配置文件与非空 SRG refmap。
 
+## 依赖声明
+
+- **必需依赖**：除了构建脚本里的依赖，还要写进 `META-INF/mods.toml`（Forge，`mandatory=true`）或 `META-INF/neoforge.mods.toml`（NeoForge，`type="required"`）的 `[[dependencies."<modid>"]]`，并给出实际可用的版本范围。只加构建依赖而不写元数据，玩家端会因缺库直接崩溃；完整写法见 [ForgeAttachment](forgeattachment.md)。
+- **可选依赖**：不需要写进元数据；调用收在 `compat/`，经检查入口后缺失依赖仍能启动，见 [兼容](compat.md)。
+- **本地 jar 依赖**：Maven 拿不到的自定义依赖放 `libs/`，用 `flatDir { dir 'libs' }` 解析，坐标固定写 `blank:<name>:<version>`，jar 文件名须为 `<name>-<version>.jar`；Forge 1.20.1 外面再包 `fg.deobf(...)`，NeoForge 直接 `implementation(...)`。仅编译期使用的 jar 放 `libs/compileOnly/`，由 `compileOnly(fileTree("libs/compileOnly"))` 统一引入。
+
+```groovy
+repositories {
+    flatDir { dir 'libs' }
+}
+
+dependencies {
+    // libs/examplelib-1.20.1-1.0.0.jar
+    implementation fg.deobf("blank:examplelib-1.20.1:1.0.0")
+}
+```
+
 ## 运行配置
 
 标准配置为 `client1`、`client2`、`server`、`gameTestServer`、`data`：
@@ -92,6 +109,16 @@ tasks.named('jar', Jar).configure {
 - 扩展现有 `finalizeArtifacts`，不要重复注册同名任务；仍保持普通构建与 `buildAlpha` 的命名、编号和成功后回写语义。
 - 启用混淆的注册类使用 `Mod*` 前缀，见 [命名规则](naming-and-layout.md)。
 
+## 构建请求
+
+用户提出构建时按以下流程，不把等待回答做成阻塞：
+
+1. 异步提问是否需要正式版，不阻塞当前工作。
+2. 立即执行 `buildAlpha`，得到带编号产物并回写 `mod_build_number`。
+3. 用户回答需要正式版，再执行 `build`，产出不带编号的发布包。
+
+回答不需要时到此为止；工程已有先例或用户明确要求普通 `build` 时按第 3 步处理。版本语义见 [版本号与产物](versioning.md)。
+
 ## 发布
 
 对外发布使用正式版本号，不带内部构建编号：
@@ -107,7 +134,7 @@ tasks.named('jar', Jar).configure {
 ./gradlew jar
 ```
 
-构建逻辑或资源处理有变化时，还应执行对应的构建任务（默认 `buildAlpha`，选择规则见 [版本号约定](versioning.md)），检查产物而不只看任务退出码：
+构建逻辑或资源处理有变化时，还应执行对应的构建任务（按 [构建请求](#构建请求) 流程，默认 `buildAlpha`），检查产物而不只看任务退出码：
 
 - Java、MC、加载器与映射匹配；依赖可解析，版本明确。
 - Datagen 资源正确入包，没有缓存目录、未展开的元数据占位符或缺失的 Mixin 文件。
