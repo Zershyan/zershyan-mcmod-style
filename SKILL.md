@@ -11,7 +11,7 @@ description: 为 Zershyan 的 Minecraft 模组工程提供包结构、注册入�
 
 1. **确认项目事实**：先读工作区指令、目标仓库的 `gradle.properties`、`build.gradle`、模组元数据与相关代码。仓库清单见外部工作区的 `zershyan-mc-mods/AGENTS.md`（若提供），不假定它随本 skill 安装。
 2. **按需阅读**：从 [主题索引](references/index.md) 选择主文档；只在任务跨主题时补读，不全量加载参考文档。
-3. **区分规则与版本实现**：本文示例主要覆盖 Forge 1.20.1、NeoForge 1.21.1。其他版本先核实构造器、事件、映射和构建接口，不能直接套用。
+3. **规则不绑版本**：包结构、命名、API 调用、兼容、Datagen 等约定对任何 MC / 加载器版本都尽量遵守；示例与模板主要覆盖 Forge 1.20.1、NeoForge 1.21.1，其他版本先核实构造器、事件、映射和构建接口，不直接照搬示例代码。
 4. **尊重已有工程**：仓库实现与本规范有差异时，先核对原因与迁移范围，不擅自统一旧代码；发现规范过时则同步修正。
 
 ## 核心约定
@@ -20,9 +20,9 @@ description: 为 Zershyan 的 Minecraft 模组工程提供包结构、注册入�
 - **分包与命名**：按功能分包，端侧按需嵌套；工具包用 `util/`。除主类与包名必须用完整 modid 外，类名前缀在 modid 过长时可取稳定缩写。使用非注册事件的类以 `Handler` 结尾，普通领域逻辑不强行归入 handler。见 [包结构](references/naming-and-layout.md)。
 - **API 调用**：任意包可调用本体 API（`api/`）；兼容 API 在 `compat/<modid>/api/`，只对本 compat 可见；本体调用 compat 一律按软调用处理。见 [对外 API](references/api.md)。
 - **资源**：可生成的资源必须走 Datagen，修改声明源或 Provider，不直接改生成结果。见 [Datagen](references/datagen.md)。
-- **版本与产物**：`mod_version` 只含模组版本；包内版本恒含 MC 版本与 `+build.N`。默认走 `buildAlpha`（取下一编号、成功后回写），`build` 沿用编号且仅在用户明确要求或已有先例时使用；旧构建产物不主动清理。见 [版本号](references/versioning.md)。
+- **版本与产物**：`mod_version` 只含模组版本；包内版本恒含 MC 版本与 `+build.N`，对外发布用不带编号的正式版本号。默认走 `buildAlpha`（取下一编号、成功后回写），`build` 沿用编号且仅在用户明确要求或已有先例时使用；旧构建产物不主动清理。见 [版本号](references/versioning.md)。
 - **可选兼容**：第三方可选依赖的调用收在 `compat/`，经 `testLoadedAndRun` / `testLoadedAndCall` 检查，并隔离实际 API 引用；缺少依赖仍须能启动。本体可调用 compat，但须软调用（本体侧不出现第三方可选依赖类型，缺失依赖不崩溃）；各 compat 子包互不引用。见 [兼容](references/compat.md)。
-- **ForgeAttachment 按需引入**：不用附件就不添加依赖；使用后声明为必需依赖，主动告知用户用途、安装要求与 GitHub / MC百科 / CurseForge 项目链接或未发布状态。仓库、坐标和链接统一维护在 [ForgeAttachment](references/forgeattachment.md)。Forge 1.20.1 的 ItemStack 数据用 NBT，不建立 DataComponents。
+- **ForgeAttachment 优先采用**：Forge 模组需要玩家持久化数据时，先探测 sigh Maven 上的可用版本，固定后优先使用 ForgeAttachment，不另造 Capability 或 NBT 方案；使用后声明为必需依赖，主动告知用户用途、安装要求与 GitHub / MC百科 / CurseForge 项目链接或未发布状态。仓库、坐标和链接统一维护在 [ForgeAttachment](references/forgeattachment.md)。Forge 1.20.1 的 ItemStack 数据用 NBT，不建立 DataComponents。
 - **不擅自扩展工具链**：未经用户要求不启用混淆，不引入本 skill 未列出的依赖或工具。
 
 ## 需要用户决定
@@ -39,7 +39,7 @@ description: 为 Zershyan 的 Minecraft 模组工程提供包结构、注册入�
 | Forge 1.20.1 | `templates/forge1.20.1/` | Java 17、LegacyForge、SimpleChannel、NBT |
 | NeoForge 1.21.1 | `templates/neoforge1.21.1/` | Java 21、ModDevGradle、CustomPacketPayload |
 
-模板的 modid 为 `examplemod`，用来演示常见结构，不是新模组的必选功能清单。复制后替换标识并裁剪不用的代码；Forge 模板含附件演示，无附件需求时必须连同依赖配置一起裁剪。创建步骤见 [构建与发布](references/build.md)。
+模板的 modid 为 `examplemod`，用来演示常见结构，不是新模组的必选功能清单。复制后替换标识并裁剪不用的代码；Forge 模板含附件演示，需要玩家持久化数据时保留并按 [ForgeAttachment](references/forgeattachment.md) 探测版本，不需要再连同依赖配置一起裁剪。其他 MC 版本没有对应模板，但上述约定仍适用，只按目标版本核实注册入口、元数据与加载器 API。创建步骤见 [构建与发布](references/build.md)。
 
 ## 维护与验证
 

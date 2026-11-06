@@ -11,6 +11,7 @@
 | Gradle 默认 jar 名 | `<modid>-<Gradle version>.jar` |
 | 普通 `build` 的最终 jar 名 | `<modid>-<mod_version>-<minecraft_version>.jar` |
 | `buildAlpha` 的最终 jar 名 | `<modid>-<mod_version>-<minecraft_version>+build.<编号>.jar` |
+| Maven 发布版本 | 默认 `<mod_version>-<minecraft_version>`，不带编号 |
 
 `modid` 来自 `mod_id`，通过 `archivesName` 用作文件名前缀，不拼进包内版本。`build` 后必须有点：`+build.2`，不能写成 `+build2`。
 
@@ -23,6 +24,7 @@ mod_build_number=0
 
 - `mod_version` 不重复填写 MC 版本；MC 版本由 `minecraft_version` 单独维护。更换 MC 时仍须同步加载器、映射等兼容配置。
 - `mod_build_number` 初始为 `0`，后续由 `buildAlpha` 维护；**不是每次编译或普通构建都递增**。
+- **对外发布用正式版本号**（`<mod_version>-<minecraft_version>`），不带 `+build.<编号>`；`+build.N` 只进包内元数据与 alpha 包名。发布版本由 `maven_publish_release_version` 控制，默认 `true`，置 `false` 才沿用带编号版本。
 - Forge 的 `mods.toml` 与 NeoForge 的 `neoforge.mods.toml` 都必须展开 Gradle `version`，而非原始 `mod_version`。
 
 ## 两种构建行为
@@ -68,6 +70,7 @@ version = "${baseVersion}+build.${buildNumber}"
 - `finalizeArtifacts` 始终挂到 `build`，不能仅在启用混淆时才整理产物。
 - 普通构建保留不带编号的最终包，把带编号原包归档到 `build/libs/origin/`。重复构建时支持从已归档原包恢复，不能假设原包始终位于顶层。
 - Alpha 最终包保留带编号的名字；包内版本不因整理文件名而改变。
+- Maven 发布显式设置 publication 的 `version`，不继承带编号的 `project.version`。
 
 完整实现从对应模板取用，不另写一份不同语义的编号或收尾逻辑。涉及混淆时按 [构建与发布](build.md) 扩展既有收尾任务，保持混淆输出、原包与最终包各自用途，不重复注册 `finalizeArtifacts`。
 

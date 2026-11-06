@@ -138,10 +138,15 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 neoForge.ideSyncTask generateModMetadata
 
+// 对外发布用正式版本号，不带 +build.<编号>；置 maven_publish_release_version=false 才沿用带编号版本
+def publishReleaseVersion = (project.findProperty('maven_publish_release_version') ?: 'true').toBoolean()
+def publishVersion = publishReleaseVersion ? baseVersion : version
+
 publishing {
     publications {
         register('mavenJava', MavenPublication) {
             from components.java
+            version = publishVersion
         }
     }
     repositories {

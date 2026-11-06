@@ -16,9 +16,9 @@
 | NeoForge 1.21.1 | [构建脚本](templates/neoforge1.21.1/build.gradle) | Java 21、CustomPacketPayload、DataComponents |
 | Forge 1.20.1 | [构建脚本](templates/forge1.20.1/build.gradle) | Forge 47.3.4、Java 17、LegacyForge、SimpleChannel、NBT |
 
-两套模板的 modid 均为 `examplemod`。先确认目标版本，再替换标识并裁剪演示功能，步骤见 [构建与发布](references/build.md)。Forge 模板含附件演示：**无附件需求必须裁剪 ForgeAttachment 及其调用**；保留时遵守 [用户告知与依赖规则](references/forgeattachment.md)。
+两套模板的 modid 均为 `examplemod`。先确认目标版本，再替换标识并裁剪演示功能，步骤见 [构建与发布](references/build.md)。Forge 模板含附件演示：**需要玩家持久化数据时优先保留并使用 ForgeAttachment（先探测 sigh Maven 版本）**，不需要再裁剪依赖与调用，规则见 [用户告知与依赖规则](references/forgeattachment.md)。
 
-其他 MC 版本暂无对应模板，不能把 1.21.1 的入口、元数据或 API 直接套用。
+其他 MC 版本暂无对应模板，但包结构、命名、API 调用、兼容与 Datagen 等约定仍应尽量遵守；入口、元数据与加载器 API 须按目标版本核实，不能直接套用 1.21.1 的写法。
 
 ## 维护约定
 

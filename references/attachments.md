@@ -5,11 +5,11 @@
 | 场景 | 约定 |
 |---|---|
 | NeoForge 1.21.1 新附件 | 使用 Attachment，不为统一风格改成 Capability |
-| Forge 1.20.1 确需附件 | 按需引入 ForgeAttachment；引入后为运行时必需依赖 |
+| Forge 1.20.1 需要玩家持久化数据 | 优先使用 ForgeAttachment，先探测 sigh Maven 上的可用版本；引入后为运行时必需依赖 |
 | 已有 Forge Capability 工程 | 保留既有结构，不擅自迁移 |
-| 无附件需求 | 不添加 ForgeAttachment，普通网络消息或 ItemStack NBT 不构成引入理由 |
+| 其他附件需求 | 按需引入 ForgeAttachment；普通网络消息或 ItemStack NBT 不构成引入理由 |
 
-其他 MC / 加载器版本先核实支持范围，不直接照搬模板；需求或迁移方案不明时再向用户确认。
+其他 MC / 加载器版本先核实支持范围，不直接照搬模板实现；附件与能力的组织约定仍适用。需求或迁移方案不明时再向用户确认。
 
 ## 附件结构
 

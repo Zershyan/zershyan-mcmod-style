@@ -12,7 +12,7 @@
 |---|---|---|
 | 1.20.1 | Forge 47.x、Java 17 | [Forge 构建脚本](../templates/forge1.20.1/build.gradle)、[属性](../templates/forge1.20.1/gradle.properties) |
 | 1.21.1 | NeoForge 21.1.x、Java 21 | [NeoForge 构建脚本](../templates/neoforge1.21.1/build.gradle)、[属性](../templates/neoforge1.21.1/gradle.properties) |
-| 26.1.2 或其他版本 | 核对对应仓库与目标版本工具链 | 暂无专用模板，不能直接沿用 1.21.1 的构造器、元数据或 API |
+| 26.1.2 或其他版本 | 核对对应仓库与目标版本工具链 | 暂无专用模板；规范约定仍适用，构造器、元数据与 API 按目标版本核实 |
 
 ## 从模板创建
 
@@ -23,15 +23,14 @@
 3. 移除不用的注册项、演示功能与依赖；用户不需要 API 时移除模板中的 API 门面。不因模板包含某功能就让新模组依赖它。
 4. 重新生成资源并核对命名空间、资源引用和元数据；占位贴图生成器仅用于模板，不能替代正式素材。
 
-### ForgeAttachment 裁剪
+### ForgeAttachment 取舍
 
-Forge 模板实际使用附件演示，因此保留 forgeattachment。**不使用附件的模组不得照搬此依赖。**
+Forge 模板实际使用附件演示，因此保留 forgeattachment。**需要玩家持久化数据的新模组应保留并使用它**；确实不需要附件时再裁剪。
 
-- 先移除或改写附件注册、数据类、事件处理及网络包中的附件调用。
-- 再移除 `modImplementation`、`forgeattachment_version` 和 `mods.toml` 中对应依赖；仅为其服务的 Maven 仓库配置一并移除，共享仓库按其他依赖需求保留。
-- 保留附件功能时，按 [ForgeAttachment](forgeattachment.md) 固定 sigh Maven、明确版本，并主动告知用户安装要求和项目链接。
+- 需要玩家持久化数据时：先按 [ForgeAttachment](forgeattachment.md) 探测 sigh Maven 上的可用版本并固定，保留注册、数据类与元数据，主动告知用户安装要求和项目链接。
+- 不需要附件时：先移除或改写附件注册、数据类、事件处理及网络包中的附件调用，再移除 `modImplementation`、`forgeattachment_version` 和 `mods.toml` 中对应依赖。仅为其服务的 Maven 仓库配置一并移除，共享仓库按其他依赖需求保留。
 
-不要仅删除依赖而留下无法编译的 API 引用。
+**不使用附件的模组不得照搬此依赖。** 不要仅删除依赖而留下无法编译的 API 引用。
 
 ## 两代构建差异
 
@@ -92,6 +91,14 @@ tasks.named('jar', Jar).configure {
 - 混淆输出保留在 `build/libs/obfuscate/`，复制而非移动该任务的输出；原包归档到 `build/libs/origin/`，避免破坏输出追踪。
 - 扩展现有 `finalizeArtifacts`，不要重复注册同名任务；仍保持普通构建与 `buildAlpha` 的命名、编号和成功后回写语义。
 - 启用混淆的注册类使用 `Mod*` 前缀，见 [命名规则](naming-and-layout.md)。
+
+## 发布
+
+对外发布使用正式版本号，不带内部构建编号：
+
+- Maven publication 的 `version` 默认取正式版本号，由 `gradle.properties` 的 `maven_publish_release_version` 控制；置 `false` 时才发布带编号版本。
+- 包内元数据始终带 `+build.N`，发布文件名与包内版本不一致属预期行为。
+- 上传平台（CurseForge、Modrinth、MC百科）填写版本号时同样用正式版本号。
 
 ## 验证与维护
 

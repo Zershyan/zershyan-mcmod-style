@@ -2,9 +2,10 @@
 
 ## 接入边界
 
-- **只有确实需要附件时才引入**。普通 SimpleChannel 消息、ItemStack NBT 不构成引入理由；无附件需求就裁剪模板演示及其依赖，见 [构建与发布](build.md)。
+- **玩家持久化数据优先用 ForgeAttachment**：Forge 模组需要保存玩家数据（重进世界保留、死亡复制、服务端到客户端同步）时，一律先探测 sigh Maven 上的可用版本，固定具体版本后引入；不另造 Capability 或 NBT 方案。
+- 其他对象按需引入；普通 SimpleChannel 消息、ItemStack NBT 不构成引入理由，不需要就裁剪模板演示及其依赖，见 [构建与发布](build.md)。
 - 本页基线为 Forge 47.3.4、Java 17、LegacyForge。不要搬入 NeoForge 的附件类，也不为新附件另造 Capability 存储；已有 Capability 工程不强制迁移。
-- **按需引入不等于运行时可选**：实际使用后声明为必需依赖，不放进软兼容层，不用 `mandatory=false` 掩盖依赖。
+- **优先使用不等于运行时可选**：实际使用后声明为必需依赖，不放进软兼容层，不用 `mandatory=false` 掩盖依赖。
 - 依赖支持实体、方块实体附件，不能由此推断区块、世界或 ItemStack 也支持。注册入口与数据类按 [附件与能力](attachments.md) 组织。
 
 ## 必须告知用户
@@ -21,7 +22,7 @@
 
 ## 仓库、版本与元数据
 
-**确定需要附件后才添加**以下配置。固定使用 sigh Maven，不替换为镜像、本地 jar 或复制依赖源码。
+**接入前先探测 sigh Maven 上的可用版本**，固定具体版本后再添加以下配置。示例版本只是已保存基线，不等于最新；探测失败如实说明，不擅自改用镜像或本地 jar。
 
 ```properties
 forgeattachment_version=0.0.1-1.20.1+build.0
@@ -41,6 +42,8 @@ dependencies {
 ```
 
 完整坐标为 `io.zershyan:forgeattachment:0.0.1-1.20.1+build.0`。变量必须固定具体版本，不用 `+`、范围或 `latest.release`；`+build.0` 是版本号组成部分，不是动态通配符。
+
+探测版本读 `https://maven.sighs.cc/repository/maven-public/io/zershyan/forgeattachment/maven-metadata.xml` 的版本列表，取与目标 MC 版本匹配的最新一条。
 
 在 Forge 的 `META-INF/mods.toml` 同时声明，不能替换成 NeoForge 的 `type="required"`：
 
@@ -115,6 +118,6 @@ if (player instanceof IAttachmentHolder holder) {
 - 默认同步面向相关客户端，不等于只发送给所属玩家；私密数据用带过滤器的重载限定接收者。
 - 依赖处理跟踪 / 观察开始时的初始同步；客户端仍需容忍对象或数据尚未到达，服务端保持权威。
 - 只在变更或确有刷新需求时同步，不每 tick 无条件发包。普通模组消息仍用 [SimpleChannel](network.md)。
-- 检查依赖、版本变量与必需元数据对应，用户告知完整，注册经 `doRegister` 接入。
+- 检查依赖、版本变量（取自 Maven 探测结果）与必需元数据对应，用户告知完整，注册经 `doRegister` 接入。
 - 按启用能力验证重进世界持久化、死亡复制、初始与后续同步，以及客户端缺数据和专用服务器场景。
 - 执行 `compileJava`、`runData`；依赖下载失败如实记录，不把离线源码核对当成构建通过。
